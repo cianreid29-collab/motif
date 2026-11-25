@@ -1157,11 +1157,44 @@ function waveformPeaks(canvas, buffer, start, span) {
   return peaks;
 }
 
+function paintWaveHandles(canvas,start,span,from,to,color) {
+  if (to<=from || !canvas.clientWidth || !canvas.clientHeight) return;
+  const ctx=canvas.getContext('2d');
+  const width=canvas.clientWidth, height=canvas.clientHeight;
+  const positions=[from,to].map(time=>(time-start)/span*width);
+  const crowded=Math.abs(positions[1]-positions[0])<20;
+  ctx.save();
+  ctx.scale(canvas.width/width,canvas.height/height);
+  for (const [i,position] of positions.entries()) {
+    if (position<0 || position>width) continue;
+    const x=Math.max(9,Math.min(width-9,position));
+    const y=height/2+(crowded?(i===0?-8:8):0);
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.roundRect(x-9,y-7,18,14,4);
+    ctx.fill();
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=1.4;
+    ctx.lineCap=ctx.lineJoin='round';
+    ctx.beginPath();
+    ctx.moveTo(x-5,y);
+    ctx.lineTo(x+5,y);
+    ctx.moveTo(x-2,y-3);
+    ctx.lineTo(x-5,y);
+    ctx.lineTo(x-2,y+3);
+    ctx.moveTo(x+2,y-3);
+    ctx.lineTo(x+5,y);
+    ctx.lineTo(x+2,y+3);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function paintAll(){const start = viewStart(), span = viewSpan();for(let i of activeIds){let c=$('multi').querySelector('[data-wave="'+i+'"]'),buf=decoded.get(i);if(!c||!buf)continue;let [a,b]=bounds.get(i)||[0,0],g=c.getContext('2d'),col=colorFor(i),w=c.width,h=c.height;g.clearRect(0,0,w,h);g.fillStyle=col+'33';g.fillRect((a-start)/span*w,0,(b-a)/span*w,h);g.strokeStyle=col;g.beginPath();const peaks = waveformPeaks(c, buf, start, span);
 for (let x = 0; x < w; x++) {
   g.moveTo(x, h / 2 + peaks[x * 2] * h * .47);
   g.lineTo(x, h / 2 + peaks[x * 2 + 1] * h * .47);
-}g.stroke();g.fillStyle=col;for(let t of [a,b])g.fillRect((t-start)/span*w-2,0,4,h);for(let m of (advancedMode?allMarkers(i):[])){let x=(m.time-start)/span*w;g.fillStyle='#b67b20';g.fillRect(x,0,3,h);g.beginPath();g.moveTo(x,0);g.lineTo(x+12,0);g.lineTo(x,12);g.fill()}let panel=c.parentElement;panel.querySelector('strong').style.color=col;panel.querySelector('.a').value=a.toFixed(2);panel.querySelector('.b').value=b.toFixed(2);panel.querySelector('small').textContent=start.toFixed(2)+' — '+(start+span).toFixed(2)+' s'}}
+}g.stroke();g.fillStyle=col;for(let t of [a,b])g.fillRect((t-start)/span*w-2,0,4,h);for(let m of (advancedMode?allMarkers(i):[])){let x=(m.time-start)/span*w;g.fillStyle='#b67b20';g.fillRect(x,0,3,h);g.beginPath();g.moveTo(x,0);g.lineTo(x+12,0);g.lineTo(x,12);g.fill()}paintWaveHandles(c,start,span,a,b,col);let panel=c.parentElement;panel.querySelector('strong').style.color=col;panel.querySelector('.a').value=a.toFixed(2);panel.querySelector('.b').value=b.toFixed(2);panel.querySelector('small').textContent=start.toFixed(2)+' — '+(start+span).toFixed(2)+' s'}}
 async function buildMulti(){let rev=++multiEpoch;for(let i of activeIds){let b=await decode(i);if(rev!==multiEpoch)return;decoded.set(i,b);if(!bounds.has(i))bounds.set(i,[0,0])}if(rev!==multiEpoch)return;let root=$('multi');root.replaceChildren();for(let i of activeIds){let panel=document.createElement('article');panel.innerHTML='<strong></strong><canvas width="1200" height="120"></canvas><small></small><div class="tools"><label>Début (s) <input class="a" type="number" step="0.01" min="0"></label><label>Fin (s) <input class="b" type="number" step="0.01" min="0"></label><button>Écouter</button></div>';panel.querySelector('strong').textContent=sources[i].label||sources[i].name;let c=panel.querySelector('canvas');c.dataset.wave=i;c.tabIndex=0;c.setAttribute('aria-label','Onde audio de '+(sources[i].label||sources[i].name));let a=panel.querySelector('.a'),b=panel.querySelector('.b');a.onchange=b.onchange=()=>{
   if (!editingClipOn(i)) clearSelection();
   draftTrack=i;
@@ -1190,6 +1223,13 @@ const pointerTime = event => {
   const rect = c.getBoundingClientRect();
   return Math.max(0,Math.min(trackLimit(),viewStart()+(event.clientX-rect.left)/rect.width*viewSpan()));
 };
+function waveDragMode(time,a,b) {
+  if (b-a<.02) return 'new';
+  const tolerance=viewSpan()*11/c.getBoundingClientRect().width;
+  const left=Math.abs(time-a),right=Math.abs(time-b);
+  if (Math.min(left,right)<tolerance) return left<=right?'left':'right';
+  return time>a&&time<b?'move':'new';
+}
 c.onpointerdown = event => {
   if (event.button !== 0 || c.dataset.markerMode === '1') return;
   c.focus({preventScroll:true});
@@ -1197,9 +1237,7 @@ c.onpointerdown = event => {
   draftTrack=i;
   const start = pointerTime(event);
   const [a,b] = bounds.get(i);
-  const tolerance = viewSpan()*9/c.getBoundingClientRect().width;
-  const mode = b-a<.02 ? 'new' : Math.abs(start-a)<tolerance ? 'left' :
-    Math.abs(start-b)<tolerance ? 'right' : start>a && start<b ? 'move' : 'new';
+  const mode=waveDragMode(start,a,b);
   gesture = {id:event.pointerId,x:event.clientX,start,a,b,mode,moved:false};
   c.setPointerCapture(event.pointerId);
 };
@@ -1222,7 +1260,13 @@ function moveWaveSelection(event) {
   }
   setBounds(i,a,b);
 }
-c.onpointermove=moveWaveSelection;
+c.onpointermove=event=>{
+  if (gesture) { moveWaveSelection(event); return; }
+  if (c.dataset.markerMode==='1') {c.style.cursor='';return;}
+  const [a,b]=bounds.get(i);
+  const mode=waveDragMode(pointerTime(event),a,b);
+  c.style.cursor=mode==='move'?'grab':mode==='new'?'crosshair':'ew-resize';
+};
 c.onpointerup=event=>{
   if (gesture?.id !== event.pointerId) return;
   moveWaveSelection(event);

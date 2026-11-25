@@ -40,7 +40,7 @@
 <button id="export">Télécharger le document élève (.html)</button>
 <button id="save">Télécharger le projet modifiable (.motif)</button>
 </div>
-</details></header><main><aside><h3>1. Sources</h3><label>Document PDF ou images</label><input id="pdf" type="file" accept="application/pdf,image/*" multiple><label>Ajouter des ressources audio</label><button class="primary" id="addAudio" style="width:100%">＋ Ajouter un audio</button><input id="audio" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg" multiple hidden><small>Chaque import ajoute une piste sans remplacer les précédentes.</small><label>Ressources actives</label><div id="resourceList"></div><details style="margin-top:12px"><summary>Remplacer une piste existante</summary><label>Source à remplacer</label><select id="source"></select><button id="replaceAudio">Remplacer la source</button></details><input id="replacement" type="file" accept="audio/*" hidden><h3>2. Extraits</h3><div id="clips"></div><button id="deleteClip" disabled>Supprimer l’extrait</button><h3>3. Zones</h3><label>Couleur de la zone <input id="zoneColor" type="color" value="#6954b5"></label><button id="draw">Dessiner une zone</button><p><small>Sélectionne un extrait, puis trace un rectangle sur la page. Déplace-le ou redimensionne-le par son angle.</small></p><button id="remove">Supprimer la zone</button><button id="assign">Associer l’extrait sélectionné</button><hr><label>Ouvrir un projet (.motif)</label><input id="load" type="file" accept=".motif,.json"></aside><div><section id="editor"><h3 style="margin-top:0">Éditeur multipiste</h3><div id="multi"></div><canvas id="wave" width="1200" height="160"></canvas><div class="tools"><label>Version instrumentale <select id="karaSource"><option value="">Aucune</option></select></label><label><input id="sync" type="checkbox" checked> Synchroniser le découpage</label></div><div id="karaPanel" hidden><strong style="color:#218570">Instrumental / karaoké</strong><canvas id="wave2" width="1200" height="160"></canvas><div class="tools"><label>Début (s) <input id="ks" type="number" min="0" step="0.01" value="0"></label><label>Fin (s) <input id="ke" type="number" min="0" step="0.01" value="10"></label><button id="listenK">Écouter l’instrumental</button></div></div><small>Glisse pour sélectionner. Clique dans la sélection pour placer le curseur, puis appuie sur Lecture. J et L reculent ou avancent de 5 s. K met en pause.</small><div class="tools"><label>Début (s)<input id="start" type="number" min="0" step="0.01" value="0"></label><label>Fin (s)<input id="end" type="number" min="0" step="0.01" value="10"></label><label><span title="Fondu entrée (s)">◢</span><input aria-label="Fondu entrée (s)" id="fi" type="number" min="0" step="0.05" value="0.1"></label><label><span title="Fondu sortie (s)">◣</span><input aria-label="Fondu sortie (s)" id="fo" type="number" min="0" step="0.05" value="0.2"></label><label>Nom<input id="name" placeholder="Couplet 1"></label></div><div class="tools" style="margin-top:12px"><button id="listen">Écouter la sélection</button><button id="stop">Arrêter</button><label style="margin:0"><input id="loop" type="checkbox"> Boucle</label><button class="primary" id="add">Créer l’extrait</button><button id="newClip">Nouvel extrait</button><button id="updateClip">Modifier l’extrait</button></div></section><div id="pages"><p style="text-align:center;color:#666">Importe ton document Canva pour commencer.</p></div></div></main><script type="module">
+</details></header><main><aside><h3>1. Sources</h3><label>Document PDF ou images</label><input id="pdf" type="file" accept="application/pdf,image/*" multiple><label>Ajouter des ressources audio</label><button class="primary" id="addAudio" style="width:100%">＋ Ajouter un audio</button><input id="audio" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg" multiple hidden><small>Chaque import ajoute une piste sans remplacer les précédentes.</small><label>Ressources actives</label><div id="resourceList"></div><details style="margin-top:12px"><summary>Remplacer une piste existante</summary><label>Source à remplacer</label><select id="source"></select><button id="replaceAudio">Remplacer la source</button></details><input id="replacement" type="file" accept="audio/*" hidden><h3>2. Extraits</h3><div id="clips"></div><div class="tools"><button id="renameClip" disabled>Renommer l’extrait</button><button id="deleteClip" disabled>Supprimer l’extrait</button></div><h3>3. Zones</h3><label>Couleur de la zone <input id="zoneColor" type="color" value="#6954b5"></label><button id="draw">Dessiner une zone</button><p><small>Sélectionne un extrait, puis trace un rectangle sur la page. Déplace-le ou redimensionne-le par son angle.</small></p><button id="remove">Supprimer la zone</button><button id="assign">Associer l’extrait sélectionné</button><hr><label>Ouvrir un projet (.motif)</label><input id="load" type="file" accept=".motif,.json"></aside><div><section id="editor"><h3 style="margin-top:0">Éditeur multipiste</h3><div id="multi"></div><canvas id="wave" width="1200" height="160"></canvas><div class="tools"><label>Version instrumentale <select id="karaSource"><option value="">Aucune</option></select></label><label><input id="sync" type="checkbox" checked> Synchroniser le découpage</label></div><div id="karaPanel" hidden><strong style="color:#218570">Instrumental / karaoké</strong><canvas id="wave2" width="1200" height="160"></canvas><div class="tools"><label>Début (s) <input id="ks" type="number" min="0" step="0.01" value="0"></label><label>Fin (s) <input id="ke" type="number" min="0" step="0.01" value="10"></label><button id="listenK">Écouter l’instrumental</button></div></div><small>Glisse pour sélectionner. Clique dans la sélection pour placer le curseur, puis appuie sur Lecture. J et L reculent ou avancent de 5 s. K met en pause.</small><div class="tools"><label>Début (s)<input id="start" type="number" min="0" step="0.01" value="0"></label><label>Fin (s)<input id="end" type="number" min="0" step="0.01" value="10"></label><label><span title="Fondu entrée (s)">◢</span><input aria-label="Fondu entrée (s)" id="fi" type="number" min="0" step="0.05" value="0.1"></label><label><span title="Fondu sortie (s)">◣</span><input aria-label="Fondu sortie (s)" id="fo" type="number" min="0" step="0.05" value="0.2"></label><label>Nom<input id="name" placeholder="Couplet 1"></label></div><div class="tools" style="margin-top:12px"><button id="listen">Écouter la sélection</button><button id="stop">Arrêter</button><label style="margin:0"><input id="loop" type="checkbox"> Boucle</label><button class="primary" id="add">Créer l’extrait</button><button id="newClip">Nouvel extrait</button><button id="updateClip">Modifier l’extrait</button></div></section><div id="pages"><p style="text-align:center;color:#666">Importe ton document Canva pour commencer.</p></div></div></main><script type="module">
 const $=id=>document.getElementById(id);let pages=[],documentParts=[],sources=[],clips=[],zones=[],selected=-1,zoneSelected=-1,drawing=false,preview=false,ctx,playing,bufferCache=new Map();const status=s=>$('status').textContent=s;const read=f=>new Promise((r,j)=>{let x=new FileReader;x.onload=()=>r(x.result);x.onerror=j;x.readAsDataURL(f)});const ac=()=>ctx??=new AudioContext();async function decode(i){if(!bufferCache.has(i))bufferCache.set(i,await ac().decodeAudioData(await (await fetch(sources[i].data)).arrayBuffer()));return bufferCache.get(i)}let scrubbing=false,scrubWasPlaying=false;let creatorPaused=false, transportClip=null, transportOffset=0, transportStart=0, transportEpoch=0;
 function stop(){transportEpoch++;creatorPaused=false;transportClip=null;transportOffset=0;if(playing){let old=playing;playing=null;try{old.stop()}catch{}}if(ctx?.state==='suspended')ctx.resume()}
 async function play(c,offset=0){stop();let epoch=transportEpoch;let d=c.end-c.start;if(d<=0)return;offset=Math.max(0,Math.min(d,offset));if(offset>=d)offset=0;transportClip={...c};transportOffset=offset;await ac().resume();let b=await decode(c.source);if(epoch!==transportEpoch)return;let s=ac().createBufferSource(),g=ac().createGain(),t=ac().currentTime;s.buffer=b;s.connect(g);g.connect(ac().destination);let a=Math.min(c.fi||0,d/2),z=Math.min(c.fo||0,d/2);let gain=x=>Math.max(0,Math.min(1,a?x/a:1,z?(d-x)/z:1));g.gain.setValueAtTime(gain(offset),t);for(let x of [a,d-z,d])if(x>offset)g.gain.linearRampToValueAtTime(gain(x),t+x-offset);transportClip={...c};transportOffset=offset;transportStart=t;playing=s;s.start(t,c.start+offset,d-offset);s.onended=()=>{if(playing===s){playing=null;transportOffset=d;if($('loop').checked&&!preview)play(c)}}}
@@ -1385,7 +1385,7 @@ function revealClipOnTimeline(clip) {
   else if (clip.start<start || clip.end>start+span) updateView77(zoomFactor,clip.start);
   else paintAll();
 }
-refreshClips=function(){let root=$('clips');root.replaceChildren();$('deleteClip').disabled=!clips[selected];let groups=new Map();clips.forEach((c,i)=>{let key=c.groupId||'legacy-'+i;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(i)});for(let ids of groups.values()){let box=document.createElement('div');box.style.cssText='display:grid;gap:5px;padding:8px;border:1px solid #8884;border-radius:8px;margin-bottom:7px';let title=document.createElement('strong');title.textContent=groupName(clips[ids[0]]);box.append(title);for(let i of ids){let c=clips[i],b=document.createElement('button');b.className=i===selected?'active':'';b.style.cssText='text-align:left;margin-left:8px;border-left:4px solid '+colorFor(c.source)+';background:'+ (c.color||colorFor(c.source))+'22';b.textContent=(c.label||sources[c.source]?.label||sources[c.source]?.name||c.name)+' · '+(c.end-c.start).toFixed(1)+' s';b.title=c.name;b.dataset.clip=i;b.draggable=true;b.onclick=()=>selectIndependent(i);box.append(b)}root.append(box)}};
+refreshClips=function(){let root=$('clips');root.replaceChildren();$('renameClip').disabled=$('deleteClip').disabled=!clips[selected];let groups=new Map();clips.forEach((c,i)=>{let key=c.groupId||'legacy-'+i;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(i)});for(let ids of groups.values()){let box=document.createElement('div');box.style.cssText='display:grid;gap:5px;padding:8px;border:1px solid #8884;border-radius:8px;margin-bottom:7px';let title=document.createElement('strong');title.textContent=groupName(clips[ids[0]]);box.append(title);for(let i of ids){let c=clips[i],b=document.createElement('button');b.className=i===selected?'active':'';b.style.cssText='text-align:left;margin-left:8px;border-left:4px solid '+colorFor(c.source)+';background:'+ (c.color||colorFor(c.source))+'22';const label=c.label||sources[c.source]?.label||sources[c.source]?.name||c.name;const named=ids.length>1&&c.name!==groupName(c)+' — '+label;b.textContent=(named?c.name+' · '+label:label)+' · '+(c.end-c.start).toFixed(1)+' s';b.title=c.name;b.dataset.clip=i;b.draggable=true;b.onclick=()=>selectIndependent(i);box.append(b)}root.append(box)}};
 function addIndependentClips(tracks, name) {
   const groupId = uid(), first = clips.length;
   for (const {variants, kara, ...clip} of tracks) {
@@ -1482,6 +1482,43 @@ function duplicateClip(clip) {
   capture75();
 }
 
+function renameExcerpt(index) {
+  const clip=clips[index];
+  if (!clip) return;
+  const dialog=dialog75('Renommer l’extrait');
+  const form=document.createElement('form');
+  form.innerHTML='<label>Nom de l’extrait <input required></label>'+
+    '<button type="submit" class="primary">Enregistrer le nom</button>';
+  dialog.append(form);
+  const input=form.querySelector('input');
+  input.value=clip.name;
+  input.focus();
+  input.select();
+  input.oninput=()=>input.setCustomValidity('');
+  form.onsubmit=event=>{
+    event.preventDefault();
+    const name=input.value.trim();
+    if (!name) {
+      input.setCustomValidity('Saisis un nom pour l’extrait.');
+      input.reportValidity();
+      return;
+    }
+    if (clips[index]!==clip) { dialog.close(); return; }
+    if (sameTransport(clip)) transportClip.name=name;
+    const previous=clip.name;
+    clip.name=name;
+    if (!clip.groupId||!clips.some((other,i)=>i!==index&&other.groupId===clip.groupId)) clip.groupName=name;
+    if (selected===index&&$('name').value===previous) $('name').value=name;
+    dialog.close();
+    refreshClips();
+    render();
+    capture75();
+    if (selected===index) $('clips').querySelector('[data-clip="'+index+'"]')?.focus({preventScroll:true});
+    status('Extrait renommé : '+name);
+  };
+}
+$('renameClip').onclick=()=>renameExcerpt(selected);
+
 function deleteExcerpt(index) {
   const clip=clips[index];
   if (!clip) return;
@@ -1562,6 +1599,7 @@ document.addEventListener('contextmenu',event=>{
     const clip=clips[Number(excerpt.dataset.clip)];
     if (!clip) return;
     showEditorMenu(event,[
+      ['Renommer l’extrait',()=>renameExcerpt(Number(excerpt.dataset.clip))],
       ['Copier l’extrait',()=>copyEditorItem('clip',clip)],
       ['Coller l’extrait',()=>pasteEditorItem('clip'),editorClipboard?.type==='clip'],
       ['Dupliquer l’extrait',()=>duplicateClip(clip)],

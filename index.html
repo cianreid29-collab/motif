@@ -1638,10 +1638,78 @@ $('preview').onclick=()=>{
  d.showModal();
 };
 // Local structural analysis: log spectral bands + chroma, novelty and similarity.
-function analysisFrames(samples,sr) {
- const N=1024,hop=Math.max(N,Math.round(sr*.25)),frames=[];
- for(let p=0;p+N<=samples.length;p+=hop){let re=new Float64Array(N),im=new Float64Array(N);for(let i=0,j=0;i<N;i++){re[j]=samples[p+i]*(.5-.5*Math.cos(2*Math.PI*i/(N-1)));let k=N>>1;while(k&&(j&k)){j^=k;k>>=1}j^=k}for(let l=2;l<=N;l*=2){for(let j=0;j<l/2;j++){let a=-2*Math.PI*j/l,c=Math.cos(a),s=Math.sin(a);for(let i=j;i<N;i+=l){let k=i+l/2,r=re[k]*c-im[k]*s,t=re[k]*s+im[k]*c;re[k]=re[i]-r;im[k]=im[i]-t;re[i]+=r;im[i]+=t}}}let f=Array(24).fill(0);for(let k=3;k<N/2;k++){let hz=k*sr/N,v=re[k]**2+im[k]**2;let band=Math.max(0,Math.min(11,Math.floor(Math.log2(hz/50)*2)));f[band]+=v;if(hz>65&&hz<4000)f[12+((Math.round(69+12*Math.log2(hz/440))%12+12)%12)]+=v}for(let j=0;j<12;j++)f[j]=Math.log1p(f[j]);let sum=f.slice(12).reduce((a,b)=>a+b,0)||1;for(let j=12;j<24;j++)f[j]=Math.sqrt(f[j]/sum);frames.push(f)}
- return {frames,hop};
+function analysisFrames(samples, sampleRate) {
+  const size=1024, hop=Math.max(size,Math.round(sampleRate*.25));
+  const frames=[];
+  const window=Float64Array.from({length:size},(_,i)=>.5-.5*Math.cos(2*Math.PI*i/(size-1)));
+  const order=new Uint16Array(size);
+  for (let i=0,j=0;i<size;i++) {
+    order[i]=j;
+    let bit=size>>1;
+    while (bit && (j&bit)) { j^=bit; bit>>=1; }
+    j^=bit;
+  }
+  const weights=[];
+  for (let length=2;length<=size;length*=2) {
+    weights.push(Array.from({length:length/2},(_,i)=>{
+      const angle=-2*Math.PI*i/length;
+      return [Math.cos(angle),Math.sin(angle)];
+    }));
+  }
+  const bands=new Uint8Array(size/2), pitches=new Int8Array(size/2).fill(-1);
+  for (let bin=3;bin<size/2;bin++) {
+    const hz=bin*sampleRate/size;
+    bands[bin]=Math.max(0,Math.min(11,Math.floor(Math.log2(hz/50)*2)));
+    if (hz>65&&hz<4000) pitches[bin]=(Math.round(69+12*Math.log2(hz/440))%12+12)%12;
+  }
+  const real=new Float64Array(size), imag=new Float64Array(size);
+  for (let at=0;at+size<=samples.length;at+=hop) {
+    imag.fill(0);
+    for (let i=0;i<size;i++) real[order[i]]=samples[at+i]*window[i];
+    for (const stage of weights) {
+      const half=stage.length;
+      for (let offset=0;offset<half;offset++) {
+        const [cos,sin]=stage[offset];
+        for (let i=offset;i<size;i+=2*half) {
+          const j=i+half, re=real[j]*cos-imag[j]*sin, im=real[j]*sin+imag[j]*cos;
+          real[j]=real[i]-re;
+          imag[j]=imag[i]-im;
+          real[i]+=re;
+          imag[i]+=im;
+        }
+      }
+    }
+    const frame=new Float64Array(24);
+    let chromaPower=0;
+    for (let bin=3;bin<size/2;bin++) {
+      const power=real[bin]**2+imag[bin]**2;
+      frame[bands[bin]]+=power;
+      if (pitches[bin]>=0) {
+        frame[12+pitches[bin]]+=power;
+        chromaPower+=power;
+      }
+    }
+    for (let i=0;i<12;i++) {
+      frame[i]=Math.log1p(frame[i]);
+      frame[12+i]=Math.sqrt(frame[12+i]/(chromaPower||1));
+    }
+    frames.push(frame);
+  }
+  return {frames,hop};
+}
+
+function normalizeAnalysisFrames(frames) {
+  for (let feature=0;feature<24;feature++) {
+    const mean=frames.reduce((sum,frame)=>sum+frame[feature],0)/frames.length;
+    const spread=Math.sqrt(frames.reduce((sum,frame)=>sum+(frame[feature]-mean)**2,0)/frames.length);
+    for (const frame of frames) frame[feature]=(frame[feature]-mean)/Math.max(spread,.15);
+  }
+}
+
+function analysisDistance(a,b) {
+  let sum=0;
+  for (let i=0;i<a.length;i++) sum+=(a[i]-b[i])**2;
+  return Math.sqrt(sum/a.length);
 }
 
 function analyse93(samples,sr,granularity){
@@ -1660,11 +1728,7 @@ function findReprises(samples,sr,reference) {
 
   // Check pitch-class agreement as well as similarity across the full spectrum.
   const chroma = frames.map(frame=>frame.slice(12));
-  for (let feature=0; feature<24; feature++) {
-    const mean = frames.reduce((sum,frame)=>sum+frame[feature],0) / frames.length;
-    const spread = Math.sqrt(frames.reduce((sum,frame)=>sum+(frame[feature]-mean)**2,0) / frames.length);
-    for (const frame of frames) frame[feature]=(frame[feature]-mean)/Math.max(spread,.15);
-  }
+  normalizeAnalysisFrames(frames);
 
   const scores = [];
   const maxDistance = .95;
@@ -1700,7 +1764,34 @@ function findReprises(samples,sr,reference) {
   return matches.sort((a,b)=>a.start-b.start);
 }
 
-const form93=document.createElement('section');form93.className='advancedOnly';form93.innerHTML='<div class="tools"><button id="analyseDocument">Analyser à partir du document</button><button id="analyse93">Analyser la forme</button><select id="detail93" aria-label="Granularité"><option value="coarse">Découpage large</option><option value="medium" selected>Équilibrée</option><option value="fine">Détaillée</option></select><button id="hide93">Masquer</button><button id="erase93">Effacer l’analyse</button><button id="restore93" hidden>Rétablir l’analyse précédente</button></div><div id="formStatus93" role="status"></div><div id="sections93"></div><div id="edit93"></div>';$('multi').before(form93);let hidden93=false,chosen93=-1,analysisJob=null;const previousAnalyses=new WeakMap();const sectionReprises=new WeakMap();const colors93=['#7955bc','#237e68','#a75d26','#326caa','#a74378','#69782d','#86524a','#536078'];const source93=()=>$('sync').checked ? activeIds[0] : activeIds.includes(draftTrack) ? draftTrack : activeIds[0];const data93=()=>sources[source93()]?.form93;
+function nearbyBoundaries(samples,sampleRate,center,radius) {
+  const {frames,hop}=analysisFrames(samples,sampleRate);
+  normalizeAnalysisFrames(frames);
+  const step=hop/sampleRate;
+  const scores=[];
+  const width=Math.max(2,Math.round(1/step));
+  for (let index=width;index+width<=frames.length;index++) {
+    const time=index*step;
+    if (Math.abs(time-center)>radius) continue;
+    const before=new Float64Array(24), after=new Float64Array(24);
+    for (let i=0;i<width;i++) {
+      for (let f=0;f<24;f++) {
+        before[f]+=frames[index-width+i][f]/width;
+        after[f]+=frames[index+i][f]/width;
+      }
+    }
+    const distance=analysisDistance(before,after);
+    if (distance>.35) scores.push({time,score:distance/(1+.12*Math.abs(time-center))});
+  }
+  const best=[];
+  for (const candidate of scores.sort((a,b)=>b.score-a.score)) {
+    if (best.every(time=>Math.abs(time-candidate.time)>=.65)) best.push(candidate.time);
+    if (best.length===2) break;
+  }
+  return best;
+}
+
+const form93=document.createElement('section');form93.className='advancedOnly';form93.innerHTML='<div class="tools"><button id="analyseDocument">Analyser à partir du document</button><button id="analyse93">Analyser la forme</button><select id="detail93" aria-label="Granularité"><option value="coarse">Découpage large</option><option value="medium" selected>Équilibrée</option><option value="fine">Détaillée</option></select><button id="hide93">Masquer</button><button id="erase93">Effacer l’analyse</button><button id="restore93" hidden>Rétablir l’analyse précédente</button></div><div id="formStatus93" role="status"></div><div id="sections93"></div><div id="edit93"></div>';$('multi').before(form93);let hidden93=false,chosen93=-1,analysisJob=null;const previousAnalyses=new WeakMap();const sectionReprises=new WeakMap();const nearbySuggestions=new WeakMap();const colors93=['#7955bc','#237e68','#a75d26','#326caa','#a74378','#69782d','#86524a','#536078'];const source93=()=>$('sync').checked ? activeIds[0] : activeIds.includes(draftTrack) ? draftTrack : activeIds[0];const data93=()=>sources[source93()]?.form93;
 async function createSectionClips(section) {
   const index = source93();
   const ids = $('sync').checked ? activeIds.slice() : [index];
@@ -1724,6 +1815,29 @@ function hasSectionRange(section) {
   return Number.isFinite(section.start) && Number.isFinite(section.end) && section.end > section.start;
 }
 
+function editDocumentRange(section,start,end) {
+  Object.assign(section,{start,end,verified:false});
+  sectionReprises.delete(section);
+  nearbySuggestions.delete(section);
+  setBounds(source93(),start,end);
+}
+
+function refineSectionBounds(buffer,section,limit) {
+  const sampleRate=11025, ratio=buffer.sampleRate/sampleRate;
+  return [section.start,section.end].map(center=>{
+    const from=Math.max(0,center-5), to=Math.min(limit,center+5);
+    if (to<=from) return [];
+    const mono=new Float32Array(Math.floor((to-from)*sampleRate));
+    const left=buffer.getChannelData(0);
+    const right=buffer.numberOfChannels>1?buffer.getChannelData(1):left;
+    for (let i=0;i<mono.length;i++) {
+      const sourceIndex=Math.floor(from*buffer.sampleRate+i*ratio);
+      mono[i]=(left[sourceIndex]+right[sourceIndex])*.5;
+    }
+    return nearbyBoundaries(mono,sampleRate,center-from,3).map(time=>from+time);
+  });
+}
+
 function insertDocumentSectionControls(row, section, field) {
   const select = document.createElement('button');
   select.textContent = 'Utiliser la sélection audio';
@@ -1734,8 +1848,7 @@ function insertDocumentSectionControls(row, section, field) {
       $('formStatus93').textContent = 'Sélectionne le passage sur l’onde audio, puis réessaie.';
       return;
     }
-    Object.assign(section,{start,end});
-    sectionReprises.delete(section);
+    editDocumentRange(section,start,end);
     render93();
   };
   row.append(select);
@@ -1745,17 +1858,13 @@ function insertDocumentSectionControls(row, section, field) {
   field('Entrée ',section.start.toFixed(2),'number',value=>{
     const time = Number(value);
     if (value.trim() && time >= 0 && time < section.end) {
-      section.start = time;
-      sectionReprises.delete(section);
-      setBounds(source93(), time, section.end);
+      editDocumentRange(section,time,section.end);
     }
   });
   field('Fin ',section.end.toFixed(2),'number',value=>{
     const time = Number(value);
     if (value.trim() && time > section.start && time <= Math.ceil(max * 100) / 100) {
-      section.end = Math.min(time,max);
-      sectionReprises.delete(section);
-      setBounds(source93(), section.start, section.end);
+      editDocumentRange(section,section.start,Math.min(time,max));
     }
   });
   field('Avance (s) ',section.leadIn,'number',value=>{
@@ -1771,6 +1880,47 @@ function insertDocumentSectionControls(row, section, field) {
     else await play(clip, 0, false);
   });
   row.append(listen);
+  const verify=document.createElement('button');
+  verify.type='button';
+  verify.textContent=section.verified?'Bornes validées':'Valider les bornes';
+  verify.setAttribute('aria-pressed',String(!!section.verified));
+  verify.onclick=()=>{
+    section.docPart??=documentParts[section.group];
+    section.verified=!section.verified;
+    render93();
+  };
+  row.append(verify);
+
+  const refine=document.createElement('button');
+  refine.type='button';
+  refine.textContent='Affiner les bornes';
+  refine.onclick=safe(async()=>{
+    const index=source93();
+    const buffer=await decode(index);
+    if (source93()!==index || !data93()?.includes(section)) return;
+    nearbySuggestions.set(section,refineSectionBounds(buffer,section,max));
+    render93();
+  });
+  row.append(refine);
+  const suggestions=nearbySuggestions.get(section);
+  if (suggestions) {
+    for (const [edge,times] of suggestions.entries()) for (const time of times) {
+      const valid=edge===0?time<section.end:time>section.start;
+      if (!valid) continue;
+      const apply=document.createElement('button');
+      apply.textContent=(edge?'Fin':'Entrée')+' à '+time.toFixed(2)+' s';
+      apply.onclick=()=>{
+        editDocumentRange(section,edge?section.start:time,edge?time:section.end);
+        render93();
+      };
+      row.append(apply);
+    }
+    if (suggestions.every(times=>!times.length)) {
+      const message=document.createElement('span');
+      message.textContent='Pas de changement sonore net près de ces bornes.';
+      row.append(message);
+    }
+  }
 
   const search = document.createElement('button');
   search.textContent = 'Chercher les reprises';
@@ -1821,7 +1971,8 @@ function render93() {
 
   for (const [index,section] of sections.entries()) {
     const placed = hasSectionRange(section);
-    const label = placed ? section.name + ' · ' + section.start.toFixed(2) + '–' + section.end.toFixed(2) + ' s'
+    const label = placed ? section.name + ' · ' + section.start.toFixed(2) + '–' + section.end.toFixed(2) + ' s' +
+      (section.verified?' · Validée':'')
       : section.name + ' · à placer';
     if (guided) {
       const button = document.createElement('button');
@@ -1952,7 +2103,9 @@ function finishAnalysis(job, message) {
   return true;
 }
 
-function proposeDocumentSections(candidates, parts, duration) {
+function proposeDocumentSections(candidates, parts, duration, previous=[]) {
+  const verified=new Map(previous.filter(section=>section.guided&&section.verified&&
+    section.start>=0&&section.end>section.start&&section.end<=duration).map(section=>[section.docPart,section]));
   const interval = duration / parts.length;
   const matches = new Map();
   for (const candidate of candidates) {
@@ -1961,15 +2114,21 @@ function proposeDocumentSections(candidates, parts, duration) {
     if (candidate.start === 0 || candidate.end >= duration || candidate.end - candidate.start > interval) continue;
     const center = (candidate.start + candidate.end) / 2;
     const index = Math.floor(center / interval);
+    if (verified.has(parts[index])) continue;
+    if (parts.some((part,order)=>{
+      const section=verified.get(part);
+      return section&&(order<index ? candidate.start<section.end : candidate.end>section.start);
+    })) continue;
     const distance = Math.abs(center - (index + .5) * interval);
     if (distance > interval * .35 || distance >= (matches.get(index)?.distance ?? Infinity)) continue;
     matches.set(index,{candidate,distance});
   }
   return parts.map((part,index) => {
+    if (verified.has(part)) return {...verified.get(part)};
     const range = matches.get(index)?.candidate;
     return {
       name:'Partie ' + part, group:index, start:range?.start ?? null, end:range?.end ?? null,
-      guided:true, leadIn:.5,
+      guided:true, docPart:part, leadIn:.5,
     };
   });
 }
@@ -2022,7 +2181,7 @@ async function runFormAnalysis(guided, referenceSection) {
         samples[i] = (left[sample] + right[sample]) * .5;
       }
     }
-    const workerCode = [analysisFrames,analyse93,findReprises].map(fn=>fn.toString()).join('\n') +
+    const workerCode = [analysisFrames,normalizeAnalysisFrames,analyse93,findReprises].map(fn=>fn.toString()).join('\n') +
       ';onmessage=({data:d})=>{try{postMessage(d.reference ? {matches:findReprises(d.samples,d.sr,d.reference)} : {sections:analyse93(d.samples,d.sr,d.granularity)})}catch(e){postMessage({error:e.message})}}';
     const url = URL.createObjectURL(new Blob([workerCode], {type: 'text/javascript'}));
     try { job.worker = new Worker(url); }
@@ -2048,7 +2207,7 @@ async function runFormAnalysis(guided, referenceSection) {
         }
         return;
       }
-      const sections = guided ? proposeDocumentSections(data.sections, parts, duration) : data.sections;
+      const sections = guided ? proposeDocumentSections(data.sections, parts, duration, source.form93) : data.sections;
       const message = guided
         ? sections.filter(hasSectionRange).length + ' / ' + sections.length + ' parties du PDF pré-découpées. Vérifie les plages à l’écoute et place les autres.'
         : mode + ' · ' + sections.length + ' section(s) proposée(s) · à vérifier à l’écoute';

@@ -573,7 +573,7 @@ function analyse93(samples,sr,granularity){
  for(let j=0;j<24;j++){let m=frames.reduce((a,f)=>a+f[j],0)/frames.length,sd=Math.sqrt(frames.reduce((a,f)=>a+(f[j]-m)**2,0)/frames.length);for(let f of frames)f[j]=(f[j]-m)/Math.max(sd,.15)}
  const dist=(a,b)=>Math.sqrt(a.reduce((s,x,j)=>s+(x-b[j])**2,0)/24);let w=8,nov=[];for(let i=w;i<frames.length-w;i++)nov.push({i,v:dist(mean(i-w,i),mean(i,i+w))});let avg=nov.reduce((a,x)=>a+x.v,0)/Math.max(1,nov.length),sd=Math.sqrt(nov.reduce((a,x)=>a+(x.v-avg)**2,0)/Math.max(1,nov.length));let gap=Math.round((granularity==='fine'?5:granularity==='coarse'?16:9)*sr/hop),cuts=[0,frames.length];for(let x of nov.sort((a,b)=>b.v-a.v)){if(x.v<avg+sd*(granularity==='fine'?.35:granularity==='coarse'?1.1:.65)||x.v<.15)break;if(cuts.every(i=>Math.abs(i-x.i)>=gap))cuts.push(x.i)}cuts.sort((a,b)=>a-b);let groups=[],out=[];for(let i=0;i<cuts.length-1;i++){let a=cuts[i],b=cuts[i+1],v=mean(a,b),g=-1,best=.65;for(let j=0;j<groups.length;j++){let d=dist(v,groups[j]);if(d<best){best=d;g=j}}if(g<0){g=groups.length;groups.push(v)}out.push({start:a*hop/sr,end:i===cuts.length-2?samples.length/sr:b*hop/sr,group:g,name:String.fromCharCode(65+g%26)+(g>=26?Math.floor(g/26):'')})}return out;
 }
-const form93=document.createElement('section');form93.className='advancedOnly';form93.innerHTML='<div class="tools"><button id="analyse93">Analyser la forme</button><select id="detail93" aria-label="Granularité"><option value="coarse">Grandes parties</option><option value="medium" selected>Équilibrée</option><option value="fine">Détaillée</option></select><button id="hide93">Masquer</button><button id="erase93">Effacer l’analyse</button></div><div id="formStatus93" role="status"></div><div id="sections93"></div><div id="edit93"></div>';$('multi').before(form93);let hidden93=false,chosen93=-1,analysisJob=null;const colors93=['#7955bc','#237e68','#a75d26','#326caa','#a74378','#69782d','#86524a','#536078'];const source93=()=>$('sync').checked ? activeIds[0] : activeIds.includes(draftTrack) ? draftTrack : activeIds[0];const data93=()=>sources[source93()]?.form93;
+const form93=document.createElement('section');form93.className='advancedOnly';form93.innerHTML='<div class="tools"><button id="analyse93">Analyser la forme</button><select id="detail93" aria-label="Granularité"><option value="coarse">Grandes parties</option><option value="medium" selected>Équilibrée</option><option value="fine">Détaillée</option></select><button id="hide93">Masquer</button><button id="erase93">Effacer l’analyse</button><button id="restore93" hidden>Rétablir l’analyse précédente</button></div><div id="formStatus93" role="status"></div><div id="sections93"></div><div id="edit93"></div>';$('multi').before(form93);let hidden93=false,chosen93=-1,analysisJob=null;const previousAnalyses=new WeakMap();const colors93=['#7955bc','#237e68','#a75d26','#326caa','#a74378','#69782d','#86524a','#536078'];const source93=()=>$('sync').checked ? activeIds[0] : activeIds.includes(draftTrack) ? draftTrack : activeIds[0];const data93=()=>sources[source93()]?.form93;
 async function createSectionClips(section) {
   const index = source93();
   const ids = $('sync').checked ? activeIds.slice() : [index];
@@ -588,8 +588,34 @@ async function createSectionClips(section) {
   addIndependentClips(tracks, section.name);
 }
 
-function render93(){let d=data93(),root=$('sections93'),edit=$('edit93');root.replaceChildren();edit.replaceChildren();$('hide93').hidden=$('erase93').hidden=!d;$('hide93').textContent=hidden93?'Afficher':'Masquer';if(!d||hidden93)return;let total=d.at(-1)?.end||1;root.style.cssText='display:flex;overflow:hidden;min-height:32px;position:relative';for(let [i,s] of d.entries()){let a=Math.max(s.start,viewStart()),b=Math.min(s.end,viewStart()+viewSpan());if(b<=a)continue;let el=document.createElement('button');el.textContent=s.name;el.title=s.name+' · '+s.start.toFixed(2)+'–'+s.end.toFixed(2)+' s';el.style.cssText=`position:absolute;left:${(a-viewStart())/viewSpan()*100}%;width:${(b-a)/viewSpan()*100}%;background:${colors93[s.group%colors93.length]};color:white;overflow:hidden;white-space:nowrap;padding:5px;${i===chosen93?'outline:2px solid white;outline-offset:-3px':''}`;el.onclick=()=>{chosen93=i;clearSelection();draftTrack=source93();setBounds(draftTrack,s.start,s.end);render93()};root.append(el)}let s=d[chosen93];if(!s)return;let row=document.createElement('div');row.className='tools';function field(label,value,type,fn){let l=document.createElement('label'),x=document.createElement('input');l.textContent=label;x.type=type;x.value=value;if(type==='number')x.step='.01';x.onchange=()=>{fn(x.value);render93()};l.append(x);row.append(l)}field('Nom ',s.name,'text',v=>{if(v.trim())s.name=v.trim()});field('Famille ',s.group+1,'number',v=>{if(Number.isInteger(+v)&&+v>0&&+v<=100)s.group=+v-1});if(chosen93>0)field('Début ',s.start.toFixed(2),'number',v=>{let t=+v,prev=d[chosen93-1];if(t>prev.start+.1&&t<s.end-.1){prev.end=s.start=t;setBounds(source93(),s.start,s.end)}});if(chosen93<d.length-1)field('Fin ',s.end.toFixed(2),'number',v=>{let t=+v,next=d[chosen93+1];if(t>s.start+.1&&t<next.end-.1){next.start=s.end=t;setBounds(source93(),s.start,s.end)}});let b=document.createElement('button');b.textContent='Créer l’extrait';b.onclick=safe(()=>createSectionClips(s));row.append(b);if(chosen93<d.length-1){let m=document.createElement('button');m.textContent='Fusionner avec la suivante';m.onclick=()=>{s.end=d[chosen93+1].end;d.splice(chosen93+1,1);render93()};row.append(m)}edit.append(row)}
-$('hide93').onclick=()=>{hidden93=!hidden93;render93()};$('erase93').onclick=()=>{if(confirm('Effacer uniquement les sections proposées ?')){delete sources[source93()].form93;chosen93=-1;render93()}};
+function render93(){let d=data93(),root=$('sections93'),edit=$('edit93');root.replaceChildren();edit.replaceChildren();$('hide93').hidden=$('erase93').hidden=!d;$('restore93').hidden=!previousAnalyses.has(sources[source93()]);$('hide93').textContent=hidden93?'Afficher':'Masquer';if(!d||hidden93)return;let total=d.at(-1)?.end||1;root.style.cssText='display:flex;overflow:hidden;min-height:32px;position:relative';for(let [i,s] of d.entries()){let a=Math.max(s.start,viewStart()),b=Math.min(s.end,viewStart()+viewSpan());if(b<=a)continue;let el=document.createElement('button');el.textContent=s.name;el.title=s.name+' · '+s.start.toFixed(2)+'–'+s.end.toFixed(2)+' s';el.style.cssText=`position:absolute;left:${(a-viewStart())/viewSpan()*100}%;width:${(b-a)/viewSpan()*100}%;background:${colors93[s.group%colors93.length]};color:white;overflow:hidden;white-space:nowrap;padding:5px;${i===chosen93?'outline:2px solid white;outline-offset:-3px':''}`;el.onclick=()=>{chosen93=i;clearSelection();draftTrack=source93();setBounds(draftTrack,s.start,s.end);render93()};root.append(el)}let s=d[chosen93];if(!s)return;let row=document.createElement('div');row.className='tools';function field(label,value,type,fn){let l=document.createElement('label'),x=document.createElement('input');l.textContent=label;x.type=type;x.value=value;if(type==='number')x.step='.01';x.onchange=()=>{fn(x.value);render93()};l.append(x);row.append(l)}field('Nom ',s.name,'text',v=>{if(v.trim())s.name=v.trim()});field('Famille ',s.group+1,'number',v=>{if(Number.isInteger(+v)&&+v>0&&+v<=100)s.group=+v-1});if(chosen93>0)field('Début ',s.start.toFixed(2),'number',v=>{let t=+v,prev=d[chosen93-1];if(t>prev.start+.1&&t<s.end-.1){prev.end=s.start=t;setBounds(source93(),s.start,s.end)}});if(chosen93<d.length-1)field('Fin ',s.end.toFixed(2),'number',v=>{let t=+v,next=d[chosen93+1];if(t>s.start+.1&&t<next.end-.1){next.start=s.end=t;setBounds(source93(),s.start,s.end)}});let b=document.createElement('button');b.textContent='Créer l’extrait';b.onclick=safe(()=>createSectionClips(s));row.append(b);if(chosen93<d.length-1){let m=document.createElement('button');m.textContent='Fusionner avec la suivante';m.onclick=()=>{s.end=d[chosen93+1].end;d.splice(chosen93+1,1);render93()};row.append(m)}edit.append(row)}
+$('hide93').onclick=()=>{hidden93=!hidden93;render93()};
+
+function showAnalysis(message) {
+  hidden93 = false;
+  chosen93 = -1;
+  $('formStatus93').textContent = message;
+  render93();
+}
+
+$('erase93').onclick = () => {
+  const source = sources[source93()];
+  if (!source?.form93) return;
+  if (analysisJob?.source === source) finishAnalysis(analysisJob, '');
+  previousAnalyses.set(source, source.form93);
+  delete source.form93;
+  showAnalysis('Analyse effacée. Les extraits créés sont conservés.');
+};
+
+$('restore93').onclick = () => {
+  const source = sources[source93()];
+  const previous = previousAnalyses.get(source);
+  if (!previous) return;
+  if (analysisJob?.source === source) finishAnalysis(analysisJob, '');
+  source.form93 = previous;
+  previousAnalyses.delete(source);
+  showAnalysis('Analyse précédente rétablie.');
+};
 function finishAnalysis(job, message) {
   if (analysisJob !== job) return false;
   job.worker?.terminate();
@@ -609,12 +635,12 @@ $('analyse93').onclick = async () => {
     $('formStatus93').textContent = 'Ajoute et active une piste audio.';
     return;
   }
-  if (source.form93 && !confirm('Remplacer les sections proposées ?')) return;
-
-  const job = analysisJob = {};
-  const granularity = $('detail93').value;
+  const job = analysisJob = {source};
+  const detail = $('detail93');
+  const granularity = detail.value;
+  const mode = detail.selectedOptions[0].textContent;
   $('analyse93').textContent = 'Annuler l’analyse';
-  $('formStatus93').textContent = 'Analyse locale en cours…';
+  $('formStatus93').textContent = mode + ' · analyse locale en cours…';
   try {
     const buffer = await decode(index);
     const duration = $('sync').checked ? commonMax() : buffer.duration;
@@ -646,12 +672,12 @@ $('analyse93').onclick = async () => {
         finishAnalysis(job, data.error || 'Source modifiée : résultat ignoré.');
         return;
       }
-      if (!finishAnalysis(job, data.sections.length + ' sections proposées · à vérifier à l’écoute')) return;
+      const message = mode + ' · ' + data.sections.length + ' section(s) proposée(s) · à vérifier à l’écoute';
+      if (!finishAnalysis(job, message)) return;
+      if (source.form93) previousAnalyses.set(source, source.form93);
       source.form93 = data.sections;
       source.form93.at(-1).end = duration;
-      hidden93 = false;
-      chosen93 = -1;
-      render93();
+      showAnalysis(message);
     };
     job.worker.postMessage({samples, sr, granularity}, [samples.buffer]);
   } catch (error) {

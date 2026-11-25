@@ -691,7 +691,7 @@ function studentAnnotations(project,nav,main) {
   const palette={Jaune:'#f5d318',Vert:'#38be67',Bleu:'#3898f5',Rose:'#ef65a8'};
   const style=document.createElement('style');
   style.textContent=`
-    .annotationTools{position:relative;background:#fff;
+    .annotationTools{background:#fff;max-height:35dvh;overflow:auto;
       display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid #ded6ed}
     .annotationTools button{border:1px solid #ded6ed;border-radius:8px;background:#fff;color:#44337b;padding:7px 10px;min-height:40px}
     .annotationTools button[aria-pressed=true]{outline:2px solid #6954bd;outline-offset:-3px}
@@ -966,7 +966,7 @@ function studentAnnotations(project,nav,main) {
 function student(){
  const footer=document.querySelector('footer'),player=makePlayer(p,footer),main=document.querySelector('main');
  document.body.classList.add('reader81');
- const style=document.createElement('style');style.textContent=`*{box-sizing:border-box}html{scrollbar-gutter:stable}body.reader81{padding:0 0 var(--player81,0px);background:#f4f2f8;color:#292334} .readerNav81{position:sticky;top:0;z-index:10;background:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #ded6ed;flex-wrap:wrap}.readerNav81 strong{color:#6954bd;margin-right:auto}.reader81 button,.reader81 select{font:inherit}.readerNav81 button,.listen81 button,.fold81{border:1px solid #ded6ed;background:#fff;color:#5944a5;border-radius:9px;min-height:44px;padding:8px 12px;cursor:pointer}.readerNav81 button[aria-pressed=true]{background:#6954bd;color:white}.reader81 main{padding:0 8px;overflow-x:auto}.reader81 .page{margin:12px auto;max-width:none;
+ const style=document.createElement('style');style.textContent=`*{box-sizing:border-box}html{scrollbar-gutter:stable}body.reader81{padding:0 0 var(--player81,0px);background:#f4f2f8;color:#292334} .readerTools81{position:sticky;top:0;z-index:10}.readerNav81{background:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #ded6ed;flex-wrap:wrap}.readerNav81 strong{color:#6954bd;margin-right:auto}.reader81 button,.reader81 select{font:inherit}.readerNav81 button,.listen81 button,.fold81{border:1px solid #ded6ed;background:#fff;color:#5944a5;border-radius:9px;min-height:44px;padding:8px 12px;cursor:pointer}.readerNav81 button[aria-pressed=true]{background:#6954bd;color:white}.reader81 main{padding:0 8px;overflow-x:auto}.reader81 .page{margin:12px auto;max-width:none;
    width:calc(min(100%,1000px) * var(--document-zoom,1))}
    .readerZoom{display:inline-flex;align-items:center;gap:4px}
    .readerNav81 .readerZoom button{min-width:44px;padding:5px 8px}
@@ -975,7 +975,7 @@ function student(){
    @media print{
      html{scrollbar-gutter:auto}
      body.reader81{margin:0;padding:0;background:white}
-     .reader81 .readerNav81,.reader81 .annotationTools,.reader81 .listen81,.reader81 footer,
+     .reader81 .readerTools81,.reader81 .listen81,.reader81 footer,
      .reader81 .exportCredit,.reader81 .zone{display:none!important}
      .reader81 main,.reader81 main[hidden]{display:block!important;padding:0;overflow:visible}
      .reader81 .page{width:min(100%,calc(250mm * var(--sheet-ratio,1)))!important;
@@ -987,7 +987,10 @@ function student(){
      .readerNav81 button{padding:5px 7px;font-size:13px;min-height:40px}
      .readerNav81 .readerZoom button{min-width:36px;padding:5px 6px}
    }.reader81 .zone{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.listen81{max-width:720px;margin:12px auto;padding:0 8px}.listen81 button{display:flex;width:100%;align-items:center;text-align:left;gap:12px;margin:8px 0;min-height:56px}.listen81 button span{flex:1}.listen81 button.active81{background:#eee8fa;border-color:#6954bd}.reader81 footer{z-index:20;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));max-height:60vh;overflow:auto}.reader81 footer button,.reader81 footer select{min-height:44px}.reader81 footer input[type=range]{min-height:28px}.reader81 footer .toggle{background:#6954bd;color:white}.reader81 footer.folded81>*:not(.toggle):not(.fold81):not(:first-child){display:none!important}.reader81 footer.folded81 input[type=range],.reader81 footer.folded81 .elapsed,.reader81 footer.folded81 .total{display:none}.reader81 [hidden]{display:none!important}@media(max-width:600px){.reader81 footer>div:first-child{flex:1 0 100%!important}.reader81 footer.folded81>div:first-child{flex:1 1 100px!important}.reader81 footer label{display:flex;align-items:center;min-height:44px}.reader81 footer input[type=checkbox]{width:20px;height:20px}.reader81 footer .practiceOptions{flex-wrap:wrap;align-items:center}.reader81 main{padding:0 4px}}`;document.head.append(style);
- const nav=document.createElement('nav');nav.className='readerNav81';nav.innerHTML='<strong>motif.</strong><button aria-pressed="true">Document</button><button aria-pressed="false">Liste des écoutes</button>';main.before(nav);
+ const nav=document.createElement('nav');nav.className='readerNav81';nav.innerHTML='<strong>motif.</strong><button aria-pressed="true">Document</button><button aria-pressed="false">Liste des écoutes</button>';const tools=document.createElement('div');
+ tools.className='readerTools81';
+ tools.append(nav);
+ main.before(tools);
  const list=document.createElement('section');list.className='listen81';list.hidden=true;main.after(list);let seen=new Set();const buttons=[];
  function choose(i){player.select(i);buttons.forEach(([b,j])=>b.classList.toggle('active81',j===i))}
  p.pages.forEach((src,i)=>{let el=document.createElement('div');el.className='page';let img=new Image;img.alt='Document, page '+(i+1);img.addEventListener('load',()=>{
@@ -1009,9 +1012,10 @@ function student(){
    return button;
  };
  let zoom=100;
- const minus=makeZoomButton('−','Dézoomer',()=>setZoom(zoom-25));
+ const zoomStep=5;
+ const minus=makeZoomButton('−','Dézoomer',()=>setZoom(zoom-zoomStep));
  const reset=makeZoomButton('100 %','Réinitialiser le zoom',()=>setZoom(100));
- const plus=makeZoomButton('+','Zoomer',()=>setZoom(zoom+25));
+ const plus=makeZoomButton('+','Zoomer',()=>setZoom(zoom+zoomStep));
  nav.append(zoomTools);
  const print=document.createElement('button');
  print.type='button';
@@ -1019,6 +1023,8 @@ function student(){
  print.onclick=()=>window.print();
  nav.append(print);
  function setZoom(value) {
+   const next=Math.max(50,Math.min(250,Math.round(value)));
+   if (next===zoom) return;
    const center=main.scrollWidth>main.clientWidth?(main.scrollLeft+main.clientWidth/2)/main.scrollWidth:.5;
    const middle=window.innerHeight/2;
    const page=[...main.querySelectorAll('.page')].find(element=>{
@@ -1027,7 +1033,7 @@ function student(){
    });
    const rect=page?.getBoundingClientRect();
    const relative=rect?.height?(middle-rect.top)/rect.height:null;
-   zoom=Math.max(50,Math.min(250,value));
+   zoom=next;
    main.style.setProperty('--document-zoom',String(zoom/100));
    main.scrollLeft=Math.max(0,center*main.scrollWidth-main.clientWidth/2);
    if (relative!==null) {
@@ -1044,7 +1050,7 @@ function student(){
    const key=event.key;
    if (!['+','=','-','−','0'].includes(key)) return;
    event.preventDefault();
-   setZoom(key==='0'?100:zoom+(['+','='].includes(key)?25:-25));
+   setZoom(key==='0'?100:zoom+(['+','='].includes(key)?zoomStep:-zoomStep));
  });
  let wheel=0, lastWheel=0;
  main.addEventListener('wheel',event=>{
@@ -1054,17 +1060,17 @@ function student(){
    if (now-lastWheel>180) wheel=0;
    lastWheel=now;
    wheel+=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?100:1);
-   if (Math.abs(wheel)>=22) {
-     setZoom(zoom+(wheel<0?25:-25));
-     wheel=0;
+   const points=Math.trunc(-wheel/5);
+   if (points) {
+     wheel+=points*5;
+     setZoom(zoom+points);
    }
  },{passive:false});
  let gestureZoom=100;
  main.addEventListener('gesturestart',event=>{event.preventDefault();gestureZoom=zoom;});
  main.addEventListener('gesturechange',event=>{
    event.preventDefault();
-   const next=Math.round(gestureZoom*event.scale/25)*25;
-   if (next!==zoom) setZoom(next);
+   setZoom(gestureZoom*event.scale);
  });
  const refreshAnnotations=studentAnnotations(p,nav,main);
  switchViews.forEach((b,i)=>b.onclick=()=>{

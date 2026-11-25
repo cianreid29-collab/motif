@@ -24,6 +24,15 @@
 
 .motifShare{position:relative}
 .motifShare summary{list-style:none;background:#6954b5;color:white;border-radius:8px;padding:10px 13px;font:inherit;cursor:pointer}
+#saveMenu summary{background:#ece8f8;color:#57429c}
+#pagesNavigation{display:flex;align-items:center;gap:10px;margin:12px 0}
+#pagesNavigation button,#placeClip{border:1px solid #c9bde6}
+#pagesNavigation .placementHint{margin:0}
+#pagesNavigation:has(+ #pages:empty){display:none}
+#sections93 .documentPart{display:block;width:100%;text-align:left}
+#sections93 .documentPart[aria-pressed=true]{font-weight:700;border:1px solid #6954b5}
+#sections93 .documentPartList{display:grid;gap:6px}
+#sections93 .documentPartList>#edit93{padding:0 8px 10px;border-bottom:1px solid #bab0d1}
 .motifShare summary::-webkit-details-marker{display:none}
 .motifShare summary::after{content:' ▾'}
 .motifShareChoices{position:absolute;z-index:50;top:calc(100% + 6px);left:0;width:max-content;
@@ -32,6 +41,9 @@
 .motifShareChoices button{text-align:left;background:transparent}
 .dark .motifShareChoices{background:#302d3e;border-color:#62547c}
 #clips button.clipGroupTitle,#clips .clipGroupInput{width:100%;margin:0;padding:4px 0;color:inherit;background:transparent;border:0;border-radius:0;font:inherit;font-weight:700;text-align:left}
+#clips .clipGroupTitle::after{content:' ✎';margin-left:4px;font-weight:400}
+#pages:not(.preview) .zone.linkedClip{outline:2px dashed #6954b5;outline-offset:3px}
+#pages:not(.preview) .zone.linkedClip.selected{outline-style:solid}
 #clips .clipGroupTitle:hover{text-decoration:underline}
 #clips .clipGroupTitle:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 #clips .clipGroupInput:focus{outline:none;box-shadow:0 1px currentColor}
@@ -45,10 +57,13 @@
 </details><details id="shareMenu" class="motifShare">
 <summary>Partager</summary>
 <div class="motifShareChoices">
-<button id="exportWeb">Partager par lien</button>
+<button id="publishHosted" hidden>Créer un lien public</button>
+<button id="publishDemo">Connecter GitHub pour publier</button>
+<button id="exportWeb">Préparer un ZIP pour le Web</button>
 <button id="export">Télécharger le document élève (.html)</button>
+<button id="disconnectDemo" hidden>Déconnecter GitHub</button>
 </div>
-</details></header><main><aside><h3>1. Sources</h3><label>Document PDF ou images</label><input id="pdf" type="file" accept="application/pdf,image/*" multiple><label>Ajouter des ressources audio</label><button class="primary" id="addAudio" style="width:100%">＋ Ajouter un audio</button><input id="audio" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg" multiple hidden><small>Chaque import ajoute une piste sans remplacer les précédentes.</small><label>Ressources actives</label><div id="resourceList"></div><details style="margin-top:12px"><summary>Remplacer une piste existante</summary><label>Source à remplacer</label><select id="source"></select><button id="replaceAudio">Remplacer la source</button></details><input id="replacement" type="file" accept="audio/*" hidden><h3>2. Extraits</h3><div id="clips"></div><div class="tools"><button id="renameClip" disabled>Renommer l’extrait</button><button id="deleteClip" disabled>Supprimer l’extrait</button></div><h3>3. Zones</h3><label>Couleur de la zone <input id="zoneColor" type="color" value="#6954b5"></label><button id="draw">Dessiner une zone</button><p><small>Sélectionne un extrait, puis trace un rectangle sur la page. Déplace-le ou redimensionne-le par son angle.</small></p><button id="remove">Supprimer la zone</button><button id="assign">Associer l’extrait sélectionné</button><hr><label>Ouvrir un projet (.motif)</label><input id="load" type="file" accept=".motif,.json"></aside><div><section id="editor"><h3 style="margin-top:0">Éditeur multipiste</h3><div id="multi"></div><canvas id="wave" width="1200" height="160"></canvas><div class="tools"><label>Version instrumentale <select id="karaSource"><option value="">Aucune</option></select></label><label><input id="sync" type="checkbox" checked> Synchroniser le découpage</label></div><div id="karaPanel" hidden><strong style="color:#218570">Instrumental / karaoké</strong><canvas id="wave2" width="1200" height="160"></canvas><div class="tools"><label>Début (s) <input id="ks" type="number" min="0" step="0.01" value="0"></label><label>Fin (s) <input id="ke" type="number" min="0" step="0.01" value="10"></label><button id="listenK">Écouter l’instrumental</button></div></div><small>Glisse pour sélectionner. Clique dans la sélection pour placer le curseur, puis appuie sur Lecture. J et L reculent ou avancent de 5 s. K met en pause.</small><div class="tools"><label>Début (s)<input id="start" type="number" min="0" step="0.01" value="0"></label><label>Fin (s)<input id="end" type="number" min="0" step="0.01" value="10"></label><label><span title="Fondu entrée (s)">◢</span><input aria-label="Fondu entrée (s)" id="fi" type="number" min="0" step="0.05" value="0.1"></label><label><span title="Fondu sortie (s)">◣</span><input aria-label="Fondu sortie (s)" id="fo" type="number" min="0" step="0.05" value="0.2"></label><label>Nom<input id="name" placeholder="Couplet 1"></label></div><div class="tools" style="margin-top:12px"><button id="listen">Écouter la sélection</button><button id="stop">Arrêter</button><label style="margin:0"><input id="loop" type="checkbox"> Boucle</label><button class="primary" id="add">Créer l’extrait</button><button id="newClip">Nouvel extrait</button><button id="updateClip">Modifier l’extrait</button></div></section><div id="pages"><p style="text-align:center;color:#666">Importe ton document Canva pour commencer.</p></div></div></main><script type="module">
+</details></header><main><aside><h3>1. Sources</h3><label>Document PDF ou images</label><input id="pdf" type="file" accept="application/pdf,image/*" multiple><label>Ajouter des ressources audio</label><button class="primary" id="addAudio" style="width:100%">＋ Ajouter un audio</button><input id="audio" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg" multiple hidden><small>Chaque import ajoute une piste sans remplacer les précédentes.</small><label>Ressources actives</label><div id="resourceList"></div><details style="margin-top:12px"><summary>Remplacer une piste existante</summary><label>Source à remplacer</label><select id="source"></select><button id="replaceAudio">Remplacer la source</button></details><input id="replacement" type="file" accept="audio/*" hidden><h3>2. Extraits</h3><div id="clips"></div><div class="tools"><button id="renameClip" disabled>Renommer l’extrait</button><button id="deleteClip" disabled>Supprimer l’extrait</button></div><h3>3. Zones</h3><label>Couleur de la zone <input id="zoneColor" type="color" value="#6954b5"></label><button id="draw">Dessiner une zone</button><p><small>Sélectionne un extrait, puis trace un rectangle sur la page. Déplace-le ou redimensionne-le par son angle.</small></p><button id="remove">Supprimer la zone</button><button id="assign">Associer l’extrait sélectionné</button><hr><label>Ouvrir un projet (.motif)</label><input id="load" type="file" accept=".motif,.json"></aside><div><section id="editor"><h3 style="margin-top:0">Éditeur multipiste</h3><div id="multi"></div><canvas id="wave" width="1200" height="160"></canvas><div class="tools"><label>Version instrumentale <select id="karaSource"><option value="">Aucune</option></select></label><label><input id="sync" type="checkbox" checked> Synchroniser le découpage</label></div><div id="karaPanel" hidden><strong style="color:#218570">Instrumental / karaoké</strong><canvas id="wave2" width="1200" height="160"></canvas><div class="tools"><label>Début (s) <input id="ks" type="number" min="0" step="0.01" value="0"></label><label>Fin (s) <input id="ke" type="number" min="0" step="0.01" value="10"></label><button id="listenK">Écouter l’instrumental</button></div></div><small>Glisse pour sélectionner. Clique dans la sélection pour placer le curseur, puis appuie sur Lecture. J et L reculent ou avancent de 5 s. K met en pause.</small><div class="tools"><label>Début (s)<input id="start" type="number" min="0" step="0.01" value="0"></label><label>Fin (s)<input id="end" type="number" min="0" step="0.01" value="10"></label><label><span title="Fondu entrée (s)">◢</span><input aria-label="Fondu entrée (s)" id="fi" type="number" min="0" step="0.05" value="0.1"></label><label><span title="Fondu sortie (s)">◣</span><input aria-label="Fondu sortie (s)" id="fo" type="number" min="0" step="0.05" value="0.2"></label><label>Nom<input id="name" placeholder="Couplet 1"></label></div><div class="tools" style="margin-top:12px"><button id="listen">Écouter la sélection</button><button id="stop">Arrêter</button><label style="margin:0"><input id="loop" type="checkbox"> Boucle</label><button class="primary" id="add">Créer l’extrait</button><button id="newClip">Nouvel extrait</button><button id="updateClip">Modifier l’extrait</button><button id="placeClip" disabled>Placer sur la fiche ↓</button></div></section><div id="pagesNavigation"><button id="returnToWave">Retour à l’onde ↑</button><small class="placementHint" id="placementHint" aria-live="polite"></small></div><div id="pages"><p style="text-align:center;color:#666">Importe ton document Canva pour commencer.</p></div></div></main><script src="./sharing-config.js"></script><script type="module">
 const $=id=>document.getElementById(id);let pages=[],documentParts=[],sources=[],clips=[],zones=[],selected=-1,zoneSelected=-1,drawing=false,preview=false,ctx,playing,bufferCache=new Map();const status=s=>$('status').textContent=s;const read=f=>new Promise((r,j)=>{let x=new FileReader;x.onload=()=>r(x.result);x.onerror=j;x.readAsDataURL(f)});const ac=()=>ctx??=new AudioContext();async function decode(i){if(!bufferCache.has(i))bufferCache.set(i,await ac().decodeAudioData(await (await fetch(sources[i].data)).arrayBuffer()));return bufferCache.get(i)}let scrubbing=false,scrubWasPlaying=false;let creatorPaused=false, transportClip=null, transportOffset=0, transportStart=0, transportEpoch=0;
 function stop(){transportEpoch++;creatorPaused=false;transportClip=null;transportOffset=0;if(playing){let old=playing;playing=null;try{old.stop()}catch{}}if(ctx?.state==='suspended')ctx.resume()}
 async function play(c,offset=0){stop();let epoch=transportEpoch;let d=c.end-c.start;if(d<=0)return;offset=Math.max(0,Math.min(d,offset));if(offset>=d)offset=0;transportClip={...c};transportOffset=offset;await ac().resume();let b=await decode(c.source);if(epoch!==transportEpoch)return;let s=ac().createBufferSource(),g=ac().createGain(),t=ac().currentTime;s.buffer=b;s.connect(g);g.connect(ac().destination);let a=Math.min(c.fi||0,d/2),z=Math.min(c.fo||0,d/2);let gain=x=>Math.max(0,Math.min(1,a?x/a:1,z?(d-x)/z:1));g.gain.setValueAtTime(gain(offset),t);for(let x of [a,d-z,d])if(x>offset)g.gain.linearRampToValueAtTime(gain(x),t+x-offset);transportClip={...c};transportOffset=offset;transportStart=t;playing=s;s.start(t,c.start+offset,d-offset);s.onended=()=>{if(playing===s){playing=null;transportOffset=d;if($('loop').checked&&!preview)play(c)}}}
@@ -98,7 +113,7 @@ function render(){let root=$('pages');root.replaceChildren();root.classList.togg
   if (!clips[selected] && to>from) status('Clique sur « Créer l’extrait » avant de tracer sa zone.');
   else clearSelection();
   return;
-}e.preventDefault();let [x,y]=snapPoint94(el,p,...pos(e),e),z={p,x,y,w:0,h:0,c:selected,color:clips[selected].color||$('zoneColor').value};let overlay=document.createElementNS('http://www.w3.org/2000/svg','svg'),rect=document.createElementNS('http://www.w3.org/2000/svg','rect');overlay.setAttribute('viewBox','0 0 1000 1000');overlay.setAttribute('preserveAspectRatio','none');overlay.classList.add('drawingOverlay');rect.setAttribute('fill',z.color);rect.setAttribute('fill-opacity','.20');rect.setAttribute('stroke',z.color);rect.setAttribute('stroke-width','2');rect.setAttribute('vector-effect','non-scaling-stroke');overlay.append(rect);el.append(overlay);let id=e.pointerId,frame=0,finished=false;function paint(){frame=0;for(let k of ['x','y','width','height'])rect.setAttribute(k,String(z[({width:'w',height:'h'})[k]||k]*1000))}function update(ev){let [a,b]=snapPoint94(el,p,...pos(ev),ev);Object.assign(z,{x:Math.min(x,a),y:Math.min(y,b),w:Math.abs(a-x),h:Math.abs(b-y)});if(!frame)frame=requestAnimationFrame(paint)}function cleanup(commit,ev){if(finished)return;finished=true;if(commit)update(ev);if(frame)cancelAnimationFrame(frame);el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',cancel);el.removeEventListener('lostpointercapture',cancel);if(el.hasPointerCapture(id))el.releasePointerCapture(id);overlay.remove();clearGuides94(el);if(commit&&z.w>=.005&&z.h>=.005){zones.push(z);zoneSelected=zones.length-1;drawing=true;render()}else if(commit){clearSelection()}}function move(ev){if(ev.pointerId===id){ev.preventDefault();update(ev)}}function up(ev){if(ev.pointerId===id)cleanup(true,ev)}function cancel(ev){if(ev.pointerId===id)cleanup(false,ev)}paint();el.setPointerCapture(id);el.addEventListener('pointermove',move);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',cancel);el.addEventListener('lostpointercapture',cancel)};zones.forEach((z,i)=>{if(z.p!==p)return;let b=document.createElement('button');b.className='zone'+(i===zoneSelected?' selected':'');b.dataset.zone=i;b.textContent=clips[z.c]?.name||'Zone';b.setAttribute('aria-label',b.textContent);style(b,z);el.append(b);if(preview){b.onclick=()=>previewPlayer?.select(z.c);return}let handle=document.createElement('i');b.append(handle);b.onpointerdown=e=>{if(e.button!==0)return;e.stopPropagation();zoneSelected=i;selected=z.c;el.parentElement.querySelectorAll('.zone.selected').forEach(n=>n.classList.remove('selected'));b.classList.add('selected');refreshClips();$('zoneColor').value=z.color||"#6954b5";let [x,y]=pos(e),orig={...z},resize=e.target===handle;b.setPointerCapture(e.pointerId);b.onpointermove=e=>{let [a,c]=pos(e);if(resize){z.w=Math.max(.01,Math.min(1-z.x,orig.w+a-x));z.h=Math.max(.01,Math.min(1-z.y,orig.h+c-y))}else{z.x=Math.max(0,Math.min(1-z.w,orig.x+a-x));z.y=Math.max(0,Math.min(1-z.h,orig.y+c-y))}if($('snapZones')?.checked&&!e.altKey)snapZone(z,el,resize);else clearGuides94(el);style(b,z)};b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>{clearGuides94(el);b.onlostpointercapture=null;b.onpointermove=null;b.onpointerup=null;b.onpointercancel=null}}})})}function style(b,z){Object.assign(b.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%',borderColor:preview?'transparent':(z.color||'#6954b5'),backgroundColor:preview?'transparent':(z.color||'#6954b5')+'33',color:preview?'transparent':(z.color||'#6954b5')})}$('draw').onclick=()=>{
+}e.preventDefault();let [x,y]=snapPoint94(el,p,...pos(e),e),z={p,x,y,w:0,h:0,c:selected,color:clips[selected].color||$('zoneColor').value};let overlay=document.createElementNS('http://www.w3.org/2000/svg','svg'),rect=document.createElementNS('http://www.w3.org/2000/svg','rect');overlay.setAttribute('viewBox','0 0 1000 1000');overlay.setAttribute('preserveAspectRatio','none');overlay.classList.add('drawingOverlay');rect.setAttribute('fill',z.color);rect.setAttribute('fill-opacity','.20');rect.setAttribute('stroke',z.color);rect.setAttribute('stroke-width','2');rect.setAttribute('vector-effect','non-scaling-stroke');overlay.append(rect);el.append(overlay);let id=e.pointerId,frame=0,finished=false;function paint(){frame=0;for(let k of ['x','y','width','height'])rect.setAttribute(k,String(z[({width:'w',height:'h'})[k]||k]*1000))}function update(ev){let [a,b]=snapPoint94(el,p,...pos(ev),ev);Object.assign(z,{x:Math.min(x,a),y:Math.min(y,b),w:Math.abs(a-x),h:Math.abs(b-y)});if(!frame)frame=requestAnimationFrame(paint)}function cleanup(commit,ev){if(finished)return;finished=true;if(commit)update(ev);if(frame)cancelAnimationFrame(frame);el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',cancel);el.removeEventListener('lostpointercapture',cancel);if(el.hasPointerCapture(id))el.releasePointerCapture(id);overlay.remove();clearGuides94(el);if(commit&&z.w>=.005&&z.h>=.005){zones.push(z);$('placementHint').textContent='';zoneSelected=zones.length-1;drawing=true;render()}else if(commit){clearSelection()}}function move(ev){if(ev.pointerId===id){ev.preventDefault();update(ev)}}function up(ev){if(ev.pointerId===id)cleanup(true,ev)}function cancel(ev){if(ev.pointerId===id)cleanup(false,ev)}paint();el.setPointerCapture(id);el.addEventListener('pointermove',move);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',cancel);el.addEventListener('lostpointercapture',cancel)};zones.forEach((z,i)=>{if(z.p!==p)return;let b=document.createElement('button');b.className='zone'+(i===zoneSelected?' selected':'')+(!preview&&z.c===selected?' linkedClip':'');b.dataset.zone=i;b.textContent=clips[z.c]?.name||'Zone';b.setAttribute('aria-label',b.textContent);style(b,z);el.append(b);if(preview){b.onclick=()=>previewPlayer?.select(z.c);return}let handle=document.createElement('i');b.append(handle);b.onpointerdown=e=>{if(e.button!==0)return;e.stopPropagation();zoneSelected=i;selected=z.c;el.parentElement.querySelectorAll('.zone.selected').forEach(n=>n.classList.remove('selected'));b.classList.add('selected');refreshClips();$('zoneColor').value=z.color||"#6954b5";let [x,y]=pos(e),orig={...z},resize=e.target===handle;b.setPointerCapture(e.pointerId);b.onpointermove=e=>{let [a,c]=pos(e);if(resize){z.w=Math.max(.01,Math.min(1-z.x,orig.w+a-x));z.h=Math.max(.01,Math.min(1-z.y,orig.h+c-y))}else{z.x=Math.max(0,Math.min(1-z.w,orig.x+a-x));z.y=Math.max(0,Math.min(1-z.h,orig.y+c-y))}if($('snapZones')?.checked&&!e.altKey)snapZone(z,el,resize);else clearGuides94(el);style(b,z)};b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>{clearGuides94(el);b.onlostpointercapture=null;b.onpointermove=null;b.onpointerup=null;b.onpointercancel=null}}})})}function style(b,z){Object.assign(b.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%',borderColor:preview?'transparent':(z.color||'#6954b5'),backgroundColor:preview?'transparent':(z.color||'#6954b5')+'33',color:preview?'transparent':(z.color||'#6954b5')})}$('draw').onclick=()=>{
   if (!clips[selected]) {
     status('Sélectionne un extrait dans la liste, ou crée-le à partir de l’onde audio.');
     return;
@@ -108,8 +123,10 @@ function render(){let root=$('pages');root.replaceChildren();root.classList.togg
     return;
   }
   drawing=true;
-  status('Trace un rectangle sur la page pour « '+clips[selected].name+' ».');
-};$('remove').onclick=()=>{if(zoneSelected>=0){zones.splice(zoneSelected,1);zoneSelected=-1;render()}};$('assign').onclick=()=>assignClipToZone(selected,zoneSelected);$('preview').onclick=()=>{stop();preview=!preview;$('preview').textContent=preview?'Retour édition':'Prévisualiser';render()};$('theme').onclick=()=>document.body.classList.toggle('dark');function download(name,data,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000)}function project(){return {pages,sources,clips,zones,documentParts,sync:$('sync').checked,title:$('projectName').value}}function filename(ext){let n=prompt('Nom du fichier', $('projectName').value||'Mon document MOTIF');if(n===null)return null;n=n.trim().replace(/[\\/:*?"<>|]/g,'-').replace(/\.(motif|html)$/i,'');if(!n)return null;$('projectName').value=n;return n+ext}$('save').onclick=()=>{let n=filename('.motif');if(n)download(n,JSON.stringify(project()),'application/json')};$('load').onchange=safe(async()=>{stop();let p=JSON.parse(await $('load').files[0].text());({pages,sources,clips,zones}=p);$('projectName').value=p.title||'';bufferCache.clear();selected=-1;zoneSelected=-1;refreshSources();refreshClips();render();if(sources.length)await waveform(true)});
+  const instruction='Trace un rectangle sur la page pour « '+clips[selected].name+' ».';
+  $('placementHint').textContent=instruction;
+  status(instruction);
+};$('remove').onclick=()=>{if(zoneSelected>=0){zones.splice(zoneSelected,1);zoneSelected=-1;render()}};$('assign').onclick=()=>assignClipToZone(selected,zoneSelected);$('preview').onclick=()=>{stop();preview=!preview;$('preview').textContent=preview?'Retour édition':'Prévisualiser';render()};$('theme').onclick=()=>document.body.classList.toggle('dark');function download(name,data,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000)}function project(){return {pages,sources,clips,zones,documentParts,sync:$('sync').checked,title:$('projectName').value}}function filename(ext){let n=prompt('Nom du fichier', $('projectName').value||'Mon document MOTIF');if(n===null)return null;n=n.trim().replace(/[\\/:*?"<>|]/g,'-').replace(/\.(motif|html)$/i,'');if(!n)return null;return n+ext}$('save').onclick=()=>{let n=filename('.motif');if(n)download(n,JSON.stringify(project()),'application/json')};$('load').onchange=safe(async()=>{stop();let p=JSON.parse(await $('load').files[0].text());({pages,sources,clips,zones}=p);$('projectName').value=p.title||'';bufferCache.clear();selected=-1;zoneSelected=-1;refreshSources();refreshClips();render();if(sources.length)await waveform(true)});
 for (const shareMenu of document.querySelectorAll('header .motifShare')) {
   const shareChoices=shareMenu.querySelector('.motifShareChoices');
   shareMenu.addEventListener('toggle',()=>{
@@ -175,7 +192,7 @@ function webExportTarget(value) {
   return {url,page,slug,image:slug+'-apercu.jpg'};
 }
 
-async function exportCover(source,title,layout) {
+async function exportCover(source,title) {
   const canvas=document.createElement('canvas');
   canvas.width=1200;
   canvas.height=630;
@@ -187,14 +204,13 @@ async function exportCover(source,title,layout) {
   ctx.fillRect(0,0,1200,630);
   const logo=document.querySelector('header .brand img');
   await logo.decode();
-  const centered=layout==='logo';
-  ctx.drawImage(logo,centered?540:70,centered?116:78,120,120);
+  ctx.drawImage(logo,70,78,120,120);
 
   const words=title.trim().split(/\s+/);
   const lines=[];
   let line='';
   ctx.font='700 54px system-ui, sans-serif';
-  const width=centered?920:540;
+  const width=540;
   for (const word of words) {
     const next=line?line+' '+word:word;
     if (line&&ctx.measureText(next).width>width) {
@@ -205,25 +221,23 @@ async function exportCover(source,title,layout) {
   if (line) lines.push(line);
   const visible=lines.slice(0,3);
   if (lines.length>visible.length) visible[visible.length-1]+='…';
-  ctx.textAlign=centered?'center':'left';
+  ctx.textAlign='left';
   ctx.fillStyle='#fff';
   for (const [i,raw] of visible.entries()) {
     let text=raw;
     while (text.length>2&&ctx.measureText(text).width>width) text=text.replace(/…$/,'').slice(0,-1)+'…';
-    ctx.fillText(text,centered?600:70,centered?329+i*65:302+i*65);
+    ctx.fillText(text,70,302+i*65);
   }
 
-  if (!centered) {
-    const page=new Image();
-    page.src=source;
-    await page.decode();
-    const scale=Math.min(460/page.naturalWidth,530/page.naturalHeight);
-    const w=page.naturalWidth*scale,h=page.naturalHeight*scale;
-    const x=895-w/2,y=(630-h)/2;
-    ctx.fillStyle='#fff';
-    ctx.fillRect(x-8,y-8,w+16,h+16);
-    ctx.drawImage(page,x,y,w,h);
-  }
+  const page=new Image();
+  page.src=source;
+  await page.decode();
+  const scale=Math.min(460/page.naturalWidth,530/page.naturalHeight);
+  const w=page.naturalWidth*scale,h=page.naturalHeight*scale;
+  const x=895-w/2,y=(630-h)/2;
+  ctx.fillStyle='#fff';
+  ctx.fillRect(x-8,y-8,w+16,h+16);
+  ctx.drawImage(page,x,y,w,h);
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>{
     if (blob) resolve(blob);
     else reject(Error('Impossible de générer la miniature.'));
@@ -296,7 +310,7 @@ $('exportWeb').onclick=safe(()=>{
   const form=document.createElement('form');
   form.innerHTML='<p>Choisis l’adresse de la fiche sur ton site (par exemple dans motif-demo). Télécharge ensuite le ZIP, puis mets les deux fichiers qu’il contient dans le dossier correspondant sur GitHub Pages.</p>'+
     '<label>Adresse finale du document <input type="url" required placeholder="https://exemple.github.io/motif-docs/ani-kuni.html"></label>'+
-    '<label>Miniature <select><option value="page">Fiche et logo MOTIF</option><option value="logo">Logo MOTIF</option></select></label>'+
+    '<p>La première page du document est utilisée automatiquement pour l’aperçu du lien.</p>'+
     '<button type="submit" class="primary">Télécharger les fichiers à publier</button> <span role="status"></span>'+
     '<p>Si ta fiche est déjà en ligne, colle son adresse ci-dessus, puis copie-la pour l’ENT, Padlet ou Canva.</p>'+
     '<button type="button">Copier l’adresse de la fiche</button>';
@@ -332,7 +346,7 @@ $('exportWeb').onclick=safe(()=>{
       if (!exported) { message.textContent=''; return; }
       const title=exported.title.trim()||'Document MOTIF';
       const html=studentDocumentHTML(exported,studentShareHead(title,target));
-      const cover=await exportCover(exported.pages[0],title,form.querySelector('select').value);
+      const cover=await exportCover(exported.pages[0],title);
       const zip=webExportZip([
         {name:target.page,data:new TextEncoder().encode(html)},
         {name:target.image,data:new Uint8Array(await cover.arrayBuffer())},
@@ -346,6 +360,291 @@ $('exportWeb').onclick=safe(()=>{
     }
   };
 });
+
+const demoPublication={
+  api:'https://api.github.com/repos/cianreid29-collab/motif-demo',
+  site:'https://cianreid29-collab.github.io/motif-demo/fiches/',
+  tokenKey:'motif-demo-publication-token',
+};
+let demoToken='', demoPublishing=false;
+try { demoToken=localStorage.getItem(demoPublication.tokenKey)||''; } catch {}
+
+function publicationSlug(title) {
+  return title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,55)||'fiche-motif';
+}
+function demoDocumentTarget(title) {
+  return webExportTarget(demoPublication.site+publicationSlug(title)+'-'+uid()+'.html');
+}
+
+async function demoRequest(token,path,method='GET',body) {
+  let reply;
+  try {
+    reply=await fetch(demoPublication.api+path,{
+      method, credentials:'omit', redirect:'error',
+      headers:{
+        Authorization:'Bearer '+token, Accept:'application/vnd.github+json',
+        'X-GitHub-Api-Version':'2022-11-28',
+        ...(body?{'Content-Type':'application/json'}:{}),
+      },
+      body:body?JSON.stringify(body):undefined,
+      signal:AbortSignal.timeout(30000),
+    });
+  } catch {
+    throw Error('GitHub est inaccessible. Réessaie depuis une connexion Internet autorisant GitHub.');
+  }
+  if (reply.ok) return reply.json();
+  const message=reply.status===401?'Connexion GitHub expirée. Reconnecte motif-demo depuis Partager.'
+    :[403,404].includes(reply.status)?'Autorise le dépôt motif-demo avec le droit Contents en lecture et écriture.'
+    :'GitHub a refusé la publication (code '+reply.status+').';
+  throw Object.assign(Error(message),{status:reply.status});
+}
+
+async function commitDemoFiles(token,files,request=demoRequest) {
+  const tree=await Promise.all(files.map(async({name,content})=>{
+    const blob=await request(token,'/git/blobs','POST',{encoding:'base64',content});
+    return {path:'fiches/'+name,mode:'100644',type:'blob',sha:blob.sha};
+  }));
+  const branch='/git/ref/heads/main';
+  let head=(await request(token,branch)).object.sha;
+  for (let attempt=0;attempt<3;attempt++) {
+    const current=await request(token,'/git/commits/'+head);
+    const nextTree=await request(token,'/git/trees','POST',{base_tree:current.tree.sha,tree});
+    const commit=await request(token,'/git/commits','POST',{
+      message:'Publier une fiche élève MOTIF',tree:nextTree.sha,parents:[head],
+    });
+    try {
+      await request(token,'/git/refs/heads/main','PATCH',{sha:commit.sha,force:false});
+      return;
+    } catch (error) {
+      if (![409,422].includes(error.status)||attempt===2) throw error;
+      const latest=(await request(token,branch)).object.sha;
+      if (latest===head) throw error;
+      head=latest;
+    }
+  }
+}
+
+async function demoBase64(file) {
+  return (await read(file)).split(',',2)[1];
+}
+
+async function preparePublicDocument(makeTarget) {
+  checkStudentExport();
+  const snapshot=structuredClone(project());
+  const used=[...new Set(snapshot.zones.map(zone=>zone.c))];
+  const indices=new Map(used.map((clip,index)=>[clip,index]));
+  snapshot.clips=used.map(index=>snapshot.clips[index]);
+  snapshot.zones.forEach(zone=>zone.c=indices.get(zone.c));
+  snapshot.reader={...readerOptions};
+  const quality=$('v7Quality').value==='low'?'low':'medium';
+  const originalBuffers=bufferCache;
+  const getBuffer=async index=>originalBuffers.get(index)||
+    ac().decodeAudioData(await (await fetch(snapshot.sources[index].data)).arrayBuffer());
+  const exported=await compactAudio(await v7Compress(snapshot,quality),quality,getBuffer);
+  const title=exported.title.trim()||'Document MOTIF';
+  const target=makeTarget(title);
+  const html=new Blob([studentDocumentHTML(exported,studentShareHead(title,target))],{type:'text/html'});
+  if (html.size>25*1024*1024) {
+    throw Error('La fiche dépasse 25 Mio. Choisis la qualité légère dans le mode Avancé ou raccourcis les extraits.');
+  }
+  const cover=await exportCover(exported.pages[0],title);
+  return {target,html,cover};
+}
+
+async function prepareDemoDocument() {
+  const {target,html,cover}=await preparePublicDocument(demoDocumentTarget);
+  return {target,files:await Promise.all([[target.page,html],[target.image,cover]]
+    .map(async([name,file])=>({name,content:await demoBase64(file)})))};
+}
+
+function updateDemoConnection() {
+  $('publishDemo').textContent=demoToken?'Publier et copier le lien':'Connecter GitHub pour publier';
+  $('disconnectDemo').hidden=!demoToken;
+}
+updateDemoConnection();
+
+$('disconnectDemo').onclick=()=>{
+  demoToken='';
+  try { localStorage.removeItem(demoPublication.tokenKey); } catch {}
+  updateDemoConnection();
+  status('Connexion à motif-demo retirée de ce navigateur.');
+};
+
+function connectDemo() {
+  const dialog=dialog75('Première connexion à motif-demo');
+  const form=document.createElement('form');
+  form.innerHTML='<p>Crée un jeton GitHub à accès limité au dépôt motif-demo, avec « Contents » en lecture et écriture.</p>'+
+    '<p><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Ouvrir la configuration GitHub</a></p>'+
+    '<label>Jeton GitHub <input type="password" autocomplete="off" required placeholder="github_pat_…"></label>'+
+    '<label><input type="checkbox"> Mémoriser sur cet appareil personnel</label>'+
+    '<button class="primary" type="submit">Connecter GitHub</button> <p role="status"></p>';
+  dialog.append(form);
+  form.onsubmit=async event=>{
+    event.preventDefault();
+    const input=form.querySelector('input[type=password]'), submit=form.querySelector('button');
+    const message=form.querySelector('[role=status]');
+    const token=input.value.trim();
+    if (!/^github_pat_[A-Za-z0-9_]+$/.test(token)) {
+      message.textContent='Colle un jeton GitHub à accès limité commençant par github_pat_.';
+      return;
+    }
+    submit.disabled=true;
+    message.textContent='Vérification auprès de GitHub…';
+    try {
+      await demoRequest(token,'/git/ref/heads/main');
+      if (!dialog.open) return;
+      demoToken=token;
+      let remembered=false;
+      if (form.querySelector('input[type=checkbox]').checked) {
+        try { localStorage.setItem(demoPublication.tokenKey,token); remembered=true; } catch {}
+      }
+      input.value='';
+      updateDemoConnection();
+      dialog.close();
+      status(remembered?'GitHub connecté sur cet appareil. Ouvre Partager pour publier.'
+        :'GitHub connecté pour cet onglet. Ouvre Partager pour publier.');
+    } catch (error) {
+      message.textContent=error.message;
+    } finally {
+      submit.disabled=false;
+    }
+  };
+}
+
+$('publishDemo').onclick=safe(async()=>{
+  if (!demoToken) { connectDemo(); return; }
+  if (demoPublishing) return;
+  checkStudentExport();
+  demoPublishing=true;
+  const token=demoToken;
+  status('Préparation de la fiche et de sa miniature…');
+  const publication=prepareDemoDocument().then(async({target,files})=>{
+    status('Publication dans motif-demo…');
+    await commitDemoFiles(token,files);
+    return target.url.href;
+  });
+  // Start the clipboard request while the click still grants permission.
+  let copied=Promise.resolve(false);
+  try {
+    if (typeof ClipboardItem==='function'&&navigator.clipboard?.write) {
+      const text=publication.then(url=>new Blob([url],{type:'text/plain'}));
+      text.catch(()=>{});
+      copied=navigator.clipboard.write([new ClipboardItem({'text/plain':text})]).then(()=>true,()=>false);
+    }
+  } catch {}
+  try {
+    const url=await publication;
+    const didCopy=await copied;
+    status(didCopy?'Lien copié. GitHub Pages met la fiche en ligne.':'Fiche déposée. GitHub Pages met la fiche en ligne.');
+    const dialog=dialog75('Fiche déposée sur GitHub');
+    const result=document.createElement('div');
+    result.innerHTML='<p>GitHub Pages peut mettre quelques minutes à rendre le lien accessible.</p>'+
+      '<label>Lien élève <input type="url" readonly></label>'+
+      '<button type="button">Copier le lien</button> <a target="_blank" rel="noopener noreferrer">Ouvrir la fiche</a>'+
+      ' <span role="status"></span>';
+    const field=result.querySelector('input');
+    field.value=url;
+    result.querySelector('a').href=url;
+    result.querySelector('[role=status]').textContent=didCopy?'Lien copié.':'';
+    result.querySelector('button').onclick=async()=>{
+      try {
+        await navigator.clipboard.writeText(url);
+        result.querySelector('[role=status]').textContent='Lien copié.';
+      } catch { field.focus(); field.select(); }
+    };
+    dialog.append(result);
+    if (!didCopy) { field.focus(); field.select(); }
+  } catch (error) {
+    status(error.message);
+    throw error;
+  } finally {
+    demoPublishing=false;
+  }
+});
+
+const hostedPublication=window.MOTIF_PUBLICATION;
+if (hostedPublication?.publisherOrigin&&hostedPublication?.publicOrigin) {
+  const button=$('publishHosted');
+  button.hidden=false;
+  button.onclick=safe(()=>{
+    checkStudentExport();
+    const publisher=new URL(hostedPublication.publisherOrigin);
+    const targetOrigin=new URL(hostedPublication.publicOrigin);
+    if (publisher.protocol!=='https:'||targetOrigin.protocol!=='https:'||publisher.origin===targetOrigin.origin) {
+      throw Error('Les adresses de publication MOTIF doivent être configurées en HTTPS.');
+    }
+    const popup=window.open(new URL('/publish',publisher),'_blank','popup,width=500,height=370');
+    if (!popup) throw Error('Autorise la fenêtre de publication dans ton navigateur.');
+    button.disabled=true;
+    status('Ouverture de la publication…');
+    let sent=false, expected;
+    function finish() {
+      window.removeEventListener('message',receive);
+      clearInterval(watch);
+      button.disabled=false;
+    }
+    const started=Date.now();
+    const watch=setInterval(()=>{
+      if (!popup.closed&&Date.now()-started<5*60*1000) return;
+      finish();
+      status('Publication interrompue.');
+    },500);
+    async function receive(event) {
+      if (event.source!==popup||event.origin!==publisher.origin) return;
+      if (event.data?.type==='motif-publisher-ready'&&!sent) {
+        sent=true;
+        try {
+          const document=await preparePublicDocument(title=>{
+            const slug=publicationSlug(title);
+            const id=slug+'-'+crypto.randomUUID().replaceAll('-','');
+            return webExportTarget(new URL('/'+id+'/index.html',targetOrigin).href);
+          });
+          expected=document.target.url.href;
+          const id=document.target.url.pathname.split('/')[1];
+          popup.postMessage({type:'motif-publish',id,html:document.html,cover:document.cover},publisher.origin);
+        } catch(error) {
+          finish();
+          popup.close();
+          status(error.message);
+        }
+      } else if (event.data?.type==='motif-publish-error'&&sent) {
+        finish();
+        status('Le service de publication n’a pas enregistré la fiche.');
+      } else if (event.data?.type==='motif-published'&&expected&&event.data.url===expected) {
+        finish();
+        popup.close();
+        showPublicLink(expected);
+      }
+    }
+    window.addEventListener('message',receive);
+  });
+}
+
+async function showPublicLink(url) {
+  const dialog=dialog75('Lien public de la fiche');
+  const row=document.createElement('div');
+  row.innerHTML='<label>Adresse HTTPS <input type="url" readonly></label>'+
+    '<button type="button">Copier le lien</button> <a target="_blank" rel="noopener noreferrer">Ouvrir la fiche</a>'+
+    ' <span role="status"></span>';
+  const field=row.querySelector('input');
+  field.value=url;
+  row.querySelector('a').href=url;
+  const copy=async()=>{
+    try {
+      await navigator.clipboard.writeText(url);
+      row.querySelector('[role=status]').textContent='Lien copié.';
+    } catch {
+      field.focus();
+      field.select();
+      row.querySelector('[role=status]').textContent='Lien sélectionné. Utilise ⌘C ou Ctrl+C.';
+    }
+  };
+  row.querySelector('button').onclick=copy;
+  dialog.append(row);
+  status('Fiche publiée.');
+  await copy();
+}
 
 function studentDocumentHTML({documentParts, sync, ...projectData},head='<title>Document MOTIF.</title>') {
  const data=JSON.stringify(projectData).replace(/</g,'\\u003c');
@@ -639,6 +938,8 @@ function studentTextBoxes(main,bar,key,reportStorage) {
       selection.clear();
     }
     controls.hidden=!editing||!visible;
+    for (const control of [color,font,size,edit]) control.hidden=!current;
+    remove.hidden=!selection.size;
     add.setAttribute('aria-pressed',String(armed));
     add.title=armed?'Trace la zone sur la fiche ou touche une fois pour la poser':'Ajouter une zone de texte';
     selectTool.setAttribute('aria-pressed',String(selecting&&!armed));
@@ -697,6 +998,16 @@ function studentAnnotations(project,nav,main) {
     .annotationTools button[aria-pressed=true]{outline:2px solid #6954bd;outline-offset:-3px}
     .annotationTools .toolIcon{display:inline-flex;align-items:center;gap:6px}
     .annotationTools .toolIcon svg{width:18px;height:18px}
+    .annotationPrimary,.annotationActions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+    .annotationActions[hidden],.annotationTools [hidden]{display:none!important}
+    .annotationActions{flex-basis:100%}
+    @media(max-width:600px){
+      .annotationTools{padding:5px 7px;gap:4px}
+      .annotationTools button{padding:5px 7px;font-size:13px;min-height:38px}
+      .annotationTools .toolIcon{gap:3px}
+      .annotationTools .toolIcon svg{width:15px;height:15px}
+      .annotationTextTools{width:100%}
+    }
     .annotationColors{display:flex;flex-wrap:wrap;gap:6px}
     .annotationTools .swatch{background:var(--swatch);color:#251930}
     .annotationTools small{align-self:center}
@@ -761,6 +1072,9 @@ function studentAnnotations(project,nav,main) {
   toggle.setAttribute('aria-keyshortcuts','B');
   toggle.setAttribute('aria-pressed','false');
   nav.append(toggle);
+  const primary=document.createElement('div');
+  primary.className='annotationPrimary';
+  bar.append(primary);
   let mode='pen', highlighter='Jaune', active=false, visible=true, current=null;
   const undone=[];
   function button(label,action) {
@@ -784,6 +1098,9 @@ function studentAnnotations(project,nav,main) {
     choose('text');
     textBoxes.arm();
   });
+  const hand=tool('Main','M5 13V8a1 1 0 0 1 2 0v5 M7 10V5a1 1 0 0 1 2 0v6 M9 9V4a1 1 0 0 1 2 0v7 M11 10V6a1 1 0 0 1 2 0v7l2-2c2-1 3 1 2 2l-3 5a4 4 0 0 1-4 2H8a4 4 0 0 1-3-2l-3-5c-1-1 1-3 2-2l1 2',()=>choose('hand'));
+  hand.title='Faire défiler et écouter';
+  primary.append(pen,marker,text,hand);
   const colors=document.createElement('div');
   colors.className='annotationColors';
   colors.setAttribute('role','group');
@@ -808,9 +1125,25 @@ function studentAnnotations(project,nav,main) {
     current=null;
     refresh();
   });
+  const more=button('Outils',()=>{
+    actions.hidden=!actions.hidden;
+    more.setAttribute('aria-expanded',String(!actions.hidden));
+  });
+  more.setAttribute('aria-label','Options d’annotation');
+  const actions=document.createElement('div');
+  actions.className='annotationActions';
+  const mobile=matchMedia('(max-width:600px)');
+  actions.hidden=mobile.matches;
+  more.setAttribute('aria-expanded',String(!actions.hidden));
+  primary.append(more);
   const info=document.createElement('small');
   info.setAttribute('role','status');
-  bar.append(info);
+  actions.append(undo,redo,original,info);
+  bar.append(actions);
+  mobile.addEventListener('change',()=>{
+    actions.hidden=mobile.matches;
+    more.setAttribute('aria-expanded',String(!actions.hidden));
+  });
   const textBoxes=studentTextBoxes(main,bar,key,available=>{
     storageAvailable=available;
     info.textContent=available?'Annotations conservées dans ce navigateur.':'Sauvegarde locale indisponible dans ce navigateur.';
@@ -915,17 +1248,19 @@ function studentAnnotations(project,nav,main) {
     bar.hidden=!active||main.hidden;
     toggle.hidden=main.hidden;
     toggle.setAttribute('aria-pressed',String(active));
-    toggle.textContent=active?'Terminer les annotations':'Annoter';
+    toggle.textContent=active?'Terminer':'Annoter';
+    toggle.setAttribute('aria-label',active?'Terminer les annotations':'Annoter');
     original.textContent=visible?'Voir l’original':'Afficher les annotations';
     undo.disabled=!strokes.length||!visible;
     redo.disabled=!undone.length||!visible;
     pen.setAttribute('aria-pressed',String(mode==='pen'));
     marker.setAttribute('aria-pressed',String(Object.hasOwn(palette,mode)));
     text.setAttribute('aria-pressed',String(mode==='text'));
+    hand.setAttribute('aria-pressed',String(mode==='hand'));
     colors.hidden=!Object.hasOwn(palette,mode);
     for (const [tip,btn] of Object.entries(swatches)) btn.setAttribute('aria-pressed',String(mode===tip));
     for (const {canvas,paint} of layers) {
-      canvas.classList.toggle('drawing',active&&mode!=='text'&&visible&&!main.hidden);
+      canvas.classList.toggle('drawing',active&&(mode==='pen'||Object.hasOwn(palette,mode))&&visible&&!main.hidden);
       paint();
     }
     textBoxes.refresh(active&&mode==='text'&&!main.hidden,visible);
@@ -944,7 +1279,7 @@ function studentAnnotations(project,nav,main) {
     if (key==='b' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
       event.preventDefault();
       if (event.repeat) return;
-      if (!active || mode==='text') choose('pen');
+      if (!active || mode==='text'||mode==='hand') choose('pen');
       else if (mode==='pen') choose(highlighter);
       else closeTools();
       return;
@@ -1081,7 +1416,18 @@ function student(){
    refreshAnnotations();
    window.scrollTo(0,0);
  });
- let fold=document.createElement('button');fold.className='fold81';fold.textContent='Réduire';fold.setAttribute('aria-expanded','true');fold.onclick=()=>{let f=footer.classList.toggle('folded81');fold.textContent=f?'Développer':'Réduire';fold.setAttribute('aria-expanded',String(!f))};footer.append(fold);
+ const fold=document.createElement('button');
+ fold.className='fold81';
+ const mobile=matchMedia('(max-width:600px)');
+ function showPlayerOptions(expanded) {
+   footer.classList.toggle('folded81',!expanded);
+   fold.textContent=expanded?'Réduire':'Développer';
+   fold.setAttribute('aria-expanded',String(expanded));
+ }
+ showPlayerOptions(!mobile.matches);
+ mobile.addEventListener('change',()=>showPlayerOptions(!mobile.matches));
+ fold.onclick=()=>showPlayerOptions(footer.classList.contains('folded81'));
+ footer.append(fold);
  const resize=()=>document.body.style.setProperty('--player81',footer.getBoundingClientRect().height+'px');if(window.ResizeObserver)new ResizeObserver(resize).observe(footer);window.addEventListener('resize',resize);resize();
 }
 function makePlayer(p,footer){
@@ -1256,7 +1602,7 @@ async function buildMulti(){let rev=++multiEpoch;for(let i of activeIds){let b=a
   }
   await toggleCreatorPlayback(draftClip(i));
 });installMarkerTools(panel,c,i);
-let gesture, clickedSelection=false;
+let gesture, lastSelectionClick;
 const trackLimit = () => usesSyncedBounds(i) ? commonMax() : decoded.get(i).duration;
 c.onkeydown=event=>{
   if (!(event.ctrlKey||event.metaKey)||event.altKey||event.key.toLowerCase()!=='a') return;
@@ -1282,8 +1628,10 @@ function waveDragMode(time,a,b) {
   return time>a&&time<b?'move':'new';
 }
 c.onpointerdown = event => {
-  clickedSelection=false;
-  if (event.button !== 0 || c.dataset.markerMode === '1') return;
+  if (event.button !== 0 || c.dataset.markerMode === '1') {
+    lastSelectionClick=null;
+    return;
+  }
   c.focus({preventScroll:true});
   if (!editingClipOn(i)) clearSelection();
   draftTrack=i;
@@ -1325,27 +1673,29 @@ c.onpointerup=event=>{
   const {start,a,b,moved,before}=gesture;
   gesture=null;
   if (moved) capture75(before);
-  clickedSelection=!moved&&start>=a&&start<b;
-  if (clickedSelection) {
-    seekCreator(start-a,false,draftClip(i));
-    status('Curseur placé. Appuie sur Lecture pour écouter.');
-  } else if (moved && bounds.get(i)[1]>bounds.get(i)[0]) {
+  if (!moved && start>=a && start<b) {
+    const doubleClick=lastSelectionClick &&
+      lastSelectionClick.a===a&&lastSelectionClick.b===b &&
+      event.timeStamp-lastSelectionClick.time<=500 &&
+      Math.hypot(event.clientX-lastSelectionClick.x,event.clientY-lastSelectionClick.y)<=10;
+    lastSelectionClick=doubleClick?null:{a,b,time:event.timeStamp,x:event.clientX,y:event.clientY};
+    seekCreator(doubleClick?0:start-a,false,draftClip(i));
+    status(doubleClick?'Curseur au début de la sélection. Appuie sur Lecture pour écouter.'
+      :'Curseur placé. Appuie sur Lecture pour écouter.');
+    return;
+  }
+  lastSelectionClick=null;
+  if (moved && bounds.get(i)[1]>bounds.get(i)[0]) {
     status(editingClipOn(i)
       ? 'Bornes ajustées. Clique sur « Modifier l’extrait » pour enregistrer.'
       : 'Passage sélectionné. Clique dans l’onde pour placer le curseur ou sur « Créer l’extrait ».');
   }
 };
-c.ondblclick=event=>{
-  if (!clickedSelection||c.dataset.markerMode==='1') return;
-  const [a,b]=bounds.get(i), time=pointerTime(event);
-  if (time<a||time>=b) return;
-  event.preventDefault();
-  seekCreator(0,false,draftClip(i));
-  status('Curseur au début de la sélection. Appuie sur Lecture pour écouter.');
-};
 c.onpointercancel=c.onlostpointercapture=()=>{
-  if (gesture?.moved) capture75(gesture.before);
+  if (!gesture) return;
+  if (gesture.moved) capture75(gesture.before);
   gesture=null;
+  lastSelectionClick=null;
 };
 root.append(panel)}if(selected<0&&$('sync').checked&&activeIds.length){let [a,b]=bounds.get(activeIds[0]);setBounds(activeIds[0],a,b)}else paintAll();showResources()}
 function trackClip(i){let [start,end]=bounds.get(i)||[0,0];return {...current(),source:i,start,end,label:sources[i].label||sources[i].name}}
@@ -1423,6 +1773,7 @@ async function applyProject(projectData) {
   stop();
   ({pages, sources, clips, zones, documentParts} = projectData);
   editorClipboard=null;
+  $('placementHint').textContent='';
   $('sync').checked = projectData.sync;
   $('projectName').value = projectData.title || '';
   bufferCache = projectData.buffers;
@@ -1479,8 +1830,9 @@ function selectIndependent(index) {
   const clip=clips[index];
   if (!clip) return;
   selected=index;
-  zoneSelected=-1;
-  drawing=true;
+  const linked=zones.flatMap((zone,i)=>zone.c===index?[i]:[]);
+  zoneSelected=linked.length===1?linked[0]:-1;
+  drawing=!linked.length;
   draftTrack=clip.source;
   $('source').value=clip.source;
   $('zoneColor').value=clip.color||colorFor(clip.source);
@@ -1494,7 +1846,9 @@ function selectIndependent(index) {
       .catch(error=>status(error.message));
   } else revealClipOnTimeline(clip);
   refreshClips();
-  clearZoneHighlight();
+  for (const zone of $('pages').querySelectorAll('[data-zone]')) {
+    zone.classList.toggle('selected',Number(zone.dataset.zone)===zoneSelected);
+  }
   status('Extrait sélectionné : '+clip.name+' · ajuste ses bornes, puis clique sur « Modifier l’extrait ».');
 }
 
@@ -1505,8 +1859,9 @@ function revealClipOnTimeline(clip) {
   else paintAll();
 }
 function labelClipButton(button,clip,groupSize) {
-  const label=clip.label||sources[clip.source]?.label||sources[clip.source]?.name||clip.name;
-  const named=groupSize>1&&clip.name!==groupName(clip)+' — '+label;
+  const original=clip.label||sources[clip.source]?.name||clip.name;
+  const label=(sources[clip.source]?.label||original).replace(/\.(mp3|wav|m4a|ogg|flac|aac)$/i,'');
+  const named=groupSize>1&&clip.name!==groupName(clip)+' — '+original;
   button.textContent=(named?clip.name+' · '+label:label)+' · '+(clip.end-clip.start).toFixed(1)+' s';
   button.title=clip.name;
 }
@@ -1520,7 +1875,10 @@ function labelGroupButton(button,name) {
 refreshClips=function(){
   const root=$('clips'), groups=new Map();
   root.replaceChildren();
-  $('renameClip').disabled=$('deleteClip').disabled=!clips[selected];
+  for (const zone of $('pages').querySelectorAll('[data-zone]')) {
+    zone.classList.toggle('linkedClip',zones[zone.dataset.zone]?.c===selected);
+  }
+  $('renameClip').disabled=$('deleteClip').disabled=$('placeClip').disabled=!clips[selected];
   clips.forEach((clip,index)=>{
     const key=clip.groupId||'legacy-'+index;
     if (!groups.has(key)) groups.set(key,[]);
@@ -1548,6 +1906,22 @@ refreshClips=function(){
     root.append(box);
   }
 };
+$('placeClip').onclick=()=>{
+  if (!clips[selected]) return;
+  $('draw').click();
+  if (!pages.length) { $('pdf').focus(); return; }
+  $('pagesNavigation').scrollIntoView({block:'start'});
+  $('returnToWave').focus({preventScroll:true});
+};
+$('returnToWave').onclick=()=>{
+  drawing=false;
+  $('placementHint').textContent='';
+  const index=clips[selected]?.source??draftTrack;
+  const wave=$('multi').querySelector('[data-wave="'+index+'"]')||$('multi').querySelector('canvas');
+  (wave||$('editor')).scrollIntoView({block:'center'});
+  wave?.focus({preventScroll:true});
+};
+
 function addIndependentClips(tracks, name) {
   const groupId = uid(), first = clips.length;
   for (const {variants, kara, ...clip} of tracks) {
@@ -2190,7 +2564,7 @@ function addMarker(i,t){if(!sources[i])return;let target=$('sync').checked?0:i;l
 const v7=document.createElement('div');v7.id='v7Tools';v7.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0';v7.innerHTML='<span id="v7Advanced"><label>Vitesse <select id="v7Speed"><option value="1">1×</option><option value="0.75">0,75×</option><option value="0.5">0,5×</option></select></label> <button id="v7Norm">Normaliser l’extrait</button> <label>Qualité export <select id="v7Quality"><option value="original">Originale</option><option value="medium">Allégée</option><option value="low">Compacte</option></select></label></span>';$('multi').before(v7);
 $('v7Speed').onchange=()=>{creatorAudio.preservesPitch=true;creatorAudio.webkitPreservesPitch=true;creatorAudio.playbackRate=+$('v7Speed').value};
 $('v7Norm').onclick=()=>{if(selected<0){status('Sélectionne un extrait déjà créé.');return}stop();let c=clips[selected];c.normalize=!c.normalize;status(c.normalize?'Normalisation de crête activée (−1 dBFS).':'Normalisation désactivée.');refreshClips()};
-async function v7Compress(p){let quality=$('v7Quality').value;if(quality==='original')return p;let max=quality==='medium'?1600:1100,q=quality==='medium'?.85:.72;let images=[];for(let src of p.pages){let img=new Image();img.src=src;await img.decode();let ratio=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*ratio));c.height=Math.max(1,Math.round(img.height*ratio));let g=c.getContext('2d');g.fillStyle='white';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);let out=c.toDataURL('image/jpeg',q);images.push(out.length<src.length?out:src)}return {...p,pages:images}}
+async function v7Compress(p,quality=$('v7Quality').value){if(quality==='original')return p;let max=quality==='medium'?1600:1100,q=quality==='medium'?.85:.72;let images=[];for(let src of p.pages){let img=new Image();img.src=src;await img.decode();let ratio=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*ratio));c.height=Math.max(1,Math.round(img.height*ratio));let g=c.getContext('2d');g.fillStyle='white';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);let out=c.toDataURL('image/jpeg',q);images.push(out.length<src.length?out:src)}return {...p,pages:images}}
 
 // V0.9.4 — workspace tools
 let advancedMode=false, zoomFactor=1, panFraction=0;
@@ -2214,7 +2588,7 @@ $('pages75').onclick=()=>{let d=dialog75('Pages du document'),g=document.createE
 $('reader75').onclick=()=>{let d=dialog75('Personnaliser le lecteur élève');for(let [k,t] of Object.entries({loop:'Lecture en boucle',speed:'Vitesse de lecture',practice:'Mode répétition'})){let l=document.createElement('label'),c=document.createElement('input');c.type='checkbox';c.checked=readerOptions[k];c.onchange=()=>readerOptions[k]=c.checked;l.style.display='block';l.append(c,document.createTextNode(' '+t));d.append(l)}};
 $('share75').onclick=()=>{let d=dialog75('QR Code de partage'),p=document.createElement('p');p.textContent='Publie d’abord le document HTML sur un hébergement accessible aux élèves. Le QR Code ne publie pas le fichier. Si tu confirmes, le service QR reçoit l’adresse saisie. Utilise une adresse publique sans donnée personnelle ni lien privé.';let input=document.createElement('input');input.type='url';input.placeholder='https://…';input.style.width='100%';let b=document.createElement('button');b.textContent='Générer le QR Code (service externe)';b.onclick=()=>{try{let u=new URL(input.value);if(!['https:','http:'].includes(u.protocol))throw Error();if(!confirm('Envoyer cette adresse au service QR externe ?'))return;let img=new Image;img.alt='QR Code du document';img.referrerPolicy='no-referrer';img.onerror=()=>{img.replaceWith(document.createTextNode('Le service QR est indisponible. Tu peux partager directement le lien.'))};img.src='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(u.href);d.append(img)}catch{status('Adresse web invalide.')}};d.append(p,input,b)};
 // Compact export: render only used excerpts into lower-rate PCM, preserving fades and normalization.
-async function compactAudio(p){if($('v7Quality').value==='original')return p;let rate=$('v7Quality').value==='low'?22050:32000, out=[], cc=p.clips.map(c=>({...c}));for(let i=0;i<cc.length;i++){if(!p.zones.some(z=>z.c===i))continue;let c=cc[i],b=await decode(c.source),blob=wav(b,c),ctx=new OfflineAudioContext(1,1,rate),decodedAudio=await ctx.decodeAudioData(await blob.arrayBuffer());let off=new OfflineAudioContext($('v7Quality').value==='low'?1:Math.min(2,decodedAudio.numberOfChannels),decodedAudio.length,rate),node=off.createBufferSource();node.buffer=decodedAudio;node.connect(off.destination);node.start();let rendered=await off.startRendering(),data=await read(wav(rendered,{start:0,end:rendered.duration}));out.push({name:c.name,data});Object.assign(c,{source:out.length-1,start:0,end:rendered.duration,fi:0,fo:0,normalize:false});delete c.variants;delete c.kara}return {...p,sources:out,clips:cc}}
+async function compactAudio(p,quality=$('v7Quality').value,getBuffer=decode){if(quality==='original')return p;let rate=quality==='low'?22050:32000, out=[], cc=p.clips.map(c=>({...c}));for(let i=0;i<cc.length;i++){if(!p.zones.some(z=>z.c===i))continue;let c=cc[i],b=await getBuffer(c.source),blob=wav(b,c),ctx=new OfflineAudioContext(1,1,rate),decodedAudio=await ctx.decodeAudioData(await blob.arrayBuffer());let off=new OfflineAudioContext(quality==='low'?1:Math.min(2,decodedAudio.numberOfChannels),decodedAudio.length,rate),node=off.createBufferSource();node.buffer=decodedAudio;node.connect(off.destination);node.start();let rendered=await off.startRendering(),data=await read(wav(rendered,{start:0,end:rendered.duration}));out.push({name:c.name,data});Object.assign(c,{source:out.length-1,start:0,end:rendered.duration,fi:0,fo:0,normalize:false});delete c.variants;delete c.kara}return {...p,sources:out,clips:cc}}
 // History of editing metadata (not imported media).
 let undo75=[],redo75=[],last75,historySources,historyPages,historySourceCount,historyPageCount;
 function snap75() {
@@ -2630,6 +3004,7 @@ function insertDocumentSectionControls(row, section, field) {
 
 function render93() {
   const sections = data93(), root = $('sections93'), edit = $('edit93');
+  if (edit.parentElement!==form93) form93.append(edit);
   root.replaceChildren();
   edit.replaceChildren();
   $('hide93').hidden = $('erase93').hidden = !sections;
@@ -2640,7 +3015,7 @@ function render93() {
   const guided = sections[0]?.guided;
   root.style.cssText = guided ? '' : 'display:flex;overflow:hidden;min-height:32px;position:relative';
   const list = document.createElement('div');
-  list.className = 'tools';
+  list.className = 'documentPartList';
   const viewFrom = viewStart(), span = viewSpan();
   function selectSection(section,index) {
     chosen93 = index;
@@ -2657,10 +3032,16 @@ function render93() {
       : section.name + ' · à placer';
     if (guided) {
       const button = document.createElement('button');
+      button.className='documentPart';
       button.textContent = label;
       button.setAttribute('aria-pressed', String(index === chosen93));
-      button.onclick = () => selectSection(section,index);
+      button.setAttribute('aria-controls','edit93');
+      button.onclick = () => {
+        selectSection(section,index);
+        root.querySelector('.documentPart[aria-pressed=true]')?.focus({preventScroll:true});
+      };
       list.append(button);
+      if (index===chosen93) list.append(edit);
     }
   }
 
@@ -2730,6 +3111,14 @@ function render93() {
     });
   }
   if (hasSectionRange(section)) {
+    const listen=document.createElement('button');
+    listen.textContent='Écouter la proposition';
+    listen.onclick=safe(async()=>{
+      const source=source93();
+      const clip=await valid({...current(),source,start:sectionClipStart(section),end:section.end,name:section.name});
+      await toggleCreatorPlayback(clip);
+    });
+    row.append(listen);
     const create = document.createElement('button');
     create.textContent = 'Créer l’extrait';
     create.onclick = safe(()=>createSectionClips(section));

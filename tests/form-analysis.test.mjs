@@ -47,3 +47,15 @@ test('Un audio très court reste entièrement couvert par une section', () => {
   assert.equal(sections[0].start, 0);
   assert.equal(sections[0].end, 1);
 });
+
+test('Le pré-découpage conserve les intitulés du PDF et privilégie les repères audio proches', () => {
+  const start = html.indexOf('function proposeDocumentSections(');
+  const end = html.indexOf("\n$('analyse93').onclick", start);
+  assert.ok(start >= 0 && end > start);
+  const propose = runInNewContext('(' + html.slice(start,end).trim() + ')');
+  const sections = Array.from(propose([{start:0},{start:24},{start:40},{start:76}], [1,2,3,4], 100));
+  assert.deepEqual(sections.map(section => section.name), ['Partie 1','Partie 2','Partie 3','Partie 4']);
+  assert.deepEqual(sections.map(section => section.start), [0,24,50,76]);
+  assert.deepEqual(sections.map(section => section.end), [24,50,76,100]);
+  assert.ok(sections.every(section => section.guided && section.leadIn === .5));
+});

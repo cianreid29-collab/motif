@@ -1301,16 +1301,20 @@ function studentAnnotations(project,nav,main) {
 function student(){
  const footer=document.querySelector('footer'),player=makePlayer(p,footer),main=document.querySelector('main');
  document.body.classList.add('reader81');
- const style=document.createElement('style');style.textContent=`*{box-sizing:border-box}html{scrollbar-gutter:stable}body.reader81{padding:0 0 var(--player81,0px);background:#f4f2f8;color:#292334} .readerTools81{position:sticky;top:0;z-index:10}.readerNav81{background:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #ded6ed;flex-wrap:wrap}.readerNav81 strong{color:#6954bd;margin-right:auto}.reader81 button,.reader81 select{font:inherit}.readerNav81 button,.listen81 button,.fold81{border:1px solid #ded6ed;background:#fff;color:#5944a5;border-radius:9px;min-height:44px;padding:8px 12px;cursor:pointer}.readerNav81 button[aria-pressed=true]{background:#6954bd;color:white}.reader81 main{padding:0 8px;overflow-x:auto}.reader81 .page{margin:12px auto;max-width:none;
+ const style=document.createElement('style');style.textContent=`*{box-sizing:border-box}html{scrollbar-gutter:stable}body.reader81{padding:0 0 var(--player81,0px);background:#f4f2f8;color:#292334} .readerTools81{position:sticky;top:0;z-index:10}.readerNav81{background:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #ded6ed;flex-wrap:wrap}.readerNav81 strong{color:#6954bd;margin-right:auto}.reader81 button,.reader81 select{font:inherit}.readerNav81 button,.readerZoom button,.listen81 button,.fold81{border:1px solid #ded6ed;background:#fff;color:#5944a5;border-radius:9px;min-height:44px;padding:8px 12px;cursor:pointer}.readerNav81 button[aria-pressed=true]{background:#6954bd;color:white}.reader81 main{padding:0 8px;overflow-x:auto}.reader81 .page{margin:12px auto;max-width:none;
    width:calc(min(100%,1000px) * var(--document-zoom,1))}
-   .readerZoom{display:inline-flex;align-items:center;gap:4px}
-   .readerNav81 .readerZoom button{min-width:44px;padding:5px 8px}
-   .readerNav81 .readerZoom button:disabled{opacity:.45;cursor:default}
+   .readerZoom{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(var(--player81,0px) + 12px);
+     z-index:15;display:inline-flex;align-items:center;gap:4px;padding:4px;background:white;border:1px solid #ded6ed;
+     border-radius:12px;box-shadow:0 2px 12px #29233422}
+   .readerZoom[hidden]{display:none}
+   .reader81 main{padding-bottom:64px}
+   .readerZoom button{min-width:44px;padding:5px 8px}
+   .readerZoom button:disabled{opacity:.45;cursor:default}
    @page{margin:12mm}
    @media print{
      html{scrollbar-gutter:auto}
      body.reader81{margin:0;padding:0;background:white}
-     .reader81 .readerTools81,.reader81 .listen81,.reader81 footer,
+     .reader81 .readerTools81,.reader81 .readerZoom,.reader81 .listen81,.reader81 footer,
      .reader81 .exportCredit,.reader81 .zone{display:none!important}
      .reader81 main,.reader81 main[hidden]{display:block!important;padding:0;overflow:visible}
      .reader81 .page{width:min(100%,calc(250mm * var(--sheet-ratio,1)))!important;
@@ -1320,7 +1324,7 @@ function student(){
    @media(max-width:600px){
      .readerNav81{gap:5px;padding:6px}
      .readerNav81 button{padding:5px 7px;font-size:13px;min-height:40px}
-     .readerNav81 .readerZoom button{min-width:36px;padding:5px 6px}
+     .readerZoom button{min-width:36px;padding:5px 6px}
    }.reader81 .zone{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.listen81{max-width:720px;margin:12px auto;padding:0 8px}.listen81 button{display:flex;width:100%;align-items:center;text-align:left;gap:12px;margin:8px 0;min-height:56px}.listen81 button span{flex:1}.listen81 button.active81{background:#eee8fa;border-color:#6954bd}.reader81 footer{z-index:20;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));max-height:60vh;overflow:auto}.reader81 footer button,.reader81 footer select{min-height:44px}.reader81 footer input[type=range]{min-height:28px}.reader81 footer .toggle{background:#6954bd;color:white}.reader81 footer.folded81>*:not(.toggle):not(.fold81):not(:first-child){display:none!important}.reader81 footer.folded81 input[type=range],.reader81 footer.folded81 .elapsed,.reader81 footer.folded81 .total{display:none}.reader81 [hidden]{display:none!important}@media(max-width:600px){.reader81 footer>div:first-child{flex:1 0 100%!important}.reader81 footer.folded81>div:first-child{flex:1 1 100px!important}.reader81 footer label{display:flex;align-items:center;min-height:44px}.reader81 footer input[type=checkbox]{width:20px;height:20px}.reader81 footer .practiceOptions{flex-wrap:wrap;align-items:center}.reader81 main{padding:0 4px}}`;document.head.append(style);
  const nav=document.createElement('nav');nav.className='readerNav81';nav.innerHTML='<strong>motif.</strong><button aria-pressed="true">Document</button><button aria-pressed="false">Liste des écoutes</button>';const tools=document.createElement('div');
  tools.className='readerTools81';
@@ -1351,7 +1355,7 @@ function student(){
  const minus=makeZoomButton('−','Dézoomer',()=>setZoom(zoom-zoomStep));
  const reset=makeZoomButton('100 %','Réinitialiser le zoom',()=>setZoom(100));
  const plus=makeZoomButton('+','Zoomer',()=>setZoom(zoom+zoomStep));
- nav.append(zoomTools);
+ main.after(zoomTools);
  const print=document.createElement('button');
  print.type='button';
  print.textContent='Imprimer';
@@ -2689,6 +2693,15 @@ $('preview').onclick=()=>{
  const stage=document.createElement('div');stage.style.cssText='height:calc(100% - 65px);overflow:auto';stage.append(frame);
  for(const [name,width] of [['Ordinateur','100%'],['Tablette','768px'],['Téléphone','390px']]){let b=document.createElement('button');b.textContent=name;b.onclick=()=>{frame.style.width=width;frame.style.maxWidth='100%';};bar.append(b)}
  let close=document.createElement('button');close.textContent='Fermer';close.onclick=()=>d.close();bar.append(close);d.append(bar,stage);document.body.append(d);d.addEventListener('close',()=>{frame.src='about:blank';d.remove()});
+ frame.addEventListener('load',()=>{
+   if (!d.open) return;
+   frame.contentDocument?.addEventListener('keydown',event=>{
+     if (event.key!=='Escape'||event.isComposing) return;
+     event.preventDefault();
+     event.stopPropagation();
+     d.close();
+   },true);
+ });
  frame.srcdoc=studentDocumentHTML({...project(),reader:{...readerOptions}});
  d.showModal();
 };

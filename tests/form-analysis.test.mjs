@@ -6,10 +6,10 @@ import { runInNewContext } from 'node:vm';
 // The atelier ships as one HTML file. Run the actual worker algorithm
 // without a browser or an additional copy of its code.
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const start = html.indexOf('function analyse93(');
+const start = html.indexOf('function analysisFrames(');
 const end = html.indexOf('\nconst form93', start);
 assert.ok(start >= 0 && end > start, 'Le code de l’analyse doit être présent dans l’atelier');
-const analyse = runInNewContext('(' + html.slice(start, end).trim() + ')');
+const {analyse93:analyse,findReprises} = runInNewContext(html.slice(start,end) + '\n({analyse93,findReprises})');
 
 const sampleRate = 11025;
 const sectionSeconds = 14;
@@ -63,4 +63,13 @@ test('Le pré-découpage conserve les intitulés du PDF et privilégie les repè
   assert.ok(sections.every(section => section.guided && section.leadIn === .5));
   const noEvidence = Array.from(propose([{start:0,end:100}], [1,2,3,4], 100));
   assert.ok(noEvidence.every(section => section.start === null && section.end === null));
+});
+
+
+test('La recherche retrouve un passage répété et écarte le passage de référence', () => {
+  const reference = {start:1,end:8};
+  const matches = Array.from(findReprises(tones([220,660,220]),sampleRate,reference));
+  assert.ok(matches.some(match=>Math.abs(match.start-29)<2));
+  assert.ok(matches.every(match=>match.end<=reference.start || match.start>=reference.end));
+  assert.equal(findReprises(tones([220,660]),sampleRate,{start:3,end:12}).length,0);
 });

@@ -537,15 +537,22 @@ function studentTextBoxes(main,bar,key,reportStorage) {
     area.setAttribute('aria-label','Zone de texte');
     area.placeholder='Écris ici';
     area.value=record.text;
+    const printedText=document.createElement('div');
+    printedText.className='printedStudentText';
+    printedText.setAttribute('aria-hidden','true');
+    printedText.textContent=record.text;
     area.oninput=()=>{
       record.text=area.value;
+      printedText.textContent=record.text;
       save();
     };
-    box.append(area);
+    box.append(area,printedText);
     function layout() {
       Object.assign(box.style,{left:record.x*100+'%',top:record.y*100+'%',width:record.w*100+'%',height:record.h*100+'%'});
       Object.assign(area.style,{color:colors[record.color],fontFamily:fonts[record.font],
         fontSize:`calc(var(--text-scale, .5px) * ${sizes[record.size]})`});
+      Object.assign(printedText.style,{color:colors[record.color],fontFamily:fonts[record.font]});
+      printedText.style.setProperty('--student-print-text-size',sizes[record.size]);
     }
     function adjust(dx,dy,origin,resizeBox) {
       if (resizeBox) {
@@ -692,6 +699,14 @@ function studentAnnotations(project,nav,main) {
     .annotationTextLayer.editing{pointer-events:auto}
     .annotationTextLayer.placing{cursor:crosshair}
     .studentTextBox{position:absolute}
+    .printedStudentText{display:none}
+    @media print{
+      .annotationTextLayer{container-type:inline-size}
+      .studentTextBox textarea,.studentTextBox button,.textMarquee{display:none!important}
+      .printedStudentText{display:block;width:100%;height:100%;padding:1px 3px;
+        white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden;line-height:1.15;
+        font-size:10pt;font-size:calc(.1cqw * var(--student-print-text-size))}
+    }
     .studentTextBox textarea{display:block;width:100%;height:100%;margin:0;padding:1px 3px;resize:none;border:0;
       border-radius:0;background:transparent;overflow:hidden;line-height:1.15;pointer-events:none}
     .annotationTextLayer.editing .studentTextBox{cursor:move;touch-action:none}
@@ -948,6 +963,17 @@ function student(){
    .readerZoom{display:inline-flex;align-items:center;gap:4px}
    .readerNav81 .readerZoom button{min-width:44px;padding:5px 8px}
    .readerNav81 .readerZoom button:disabled{opacity:.45;cursor:default}
+   @page{margin:12mm}
+   @media print{
+     html{scrollbar-gutter:auto}
+     body.reader81{margin:0;padding:0;background:white}
+     .reader81 .readerNav81,.reader81 .annotationTools,.reader81 .listen81,.reader81 footer,
+     .reader81 .exportCredit,.reader81 .zone{display:none!important}
+     .reader81 main,.reader81 main[hidden]{display:block!important;padding:0;overflow:visible}
+     .reader81 .page{width:min(100%,calc(250mm * var(--sheet-ratio,1)))!important;
+       margin:0 auto;break-inside:avoid}
+     .reader81 .page+.page{break-before:page}
+   }
    @media(max-width:600px){
      .readerNav81{gap:5px;padding:6px}
      .readerNav81 button{padding:5px 7px;font-size:13px;min-height:40px}
@@ -956,7 +982,9 @@ function student(){
  const nav=document.createElement('nav');nav.className='readerNav81';nav.innerHTML='<strong>motif.</strong><button aria-pressed="true">Document</button><button aria-pressed="false">Liste des écoutes</button>';main.before(nav);
  const list=document.createElement('section');list.className='listen81';list.hidden=true;main.after(list);let seen=new Set();const buttons=[];
  function choose(i){player.select(i);buttons.forEach(([b,j])=>b.classList.toggle('active81',j===i))}
- p.pages.forEach((src,i)=>{let el=document.createElement('div');el.className='page';let img=new Image;img.src=src;img.alt='Document, page '+(i+1);el.append(img);main.append(el);p.zones.filter(z=>z.p===i&&p.clips[z.c]).sort((a,b)=>a.y-b.y||a.x-b.x).forEach(z=>{let b=document.createElement('button');b.className='zone';b.setAttribute('aria-label',p.clips[z.c].name);Object.assign(b.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%'});b.onclick=()=>choose(z.c);el.append(b);if(!seen.has(z.c)){seen.add(z.c);let item=document.createElement('button'),name=document.createElement('span'),dur=document.createElement('small'),seconds=Math.max(0,Math.round(p.clips[z.c].end-p.clips[z.c].start));name.textContent=p.clips[z.c].name;dur.textContent=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');item.append('▶ ',name,dur);item.onclick=()=>choose(z.c);list.append(item);buttons.push([item,z.c])}})});
+ p.pages.forEach((src,i)=>{let el=document.createElement('div');el.className='page';let img=new Image;img.alt='Document, page '+(i+1);img.addEventListener('load',()=>{
+   if (img.naturalHeight) el.style.setProperty('--sheet-ratio',img.naturalWidth/img.naturalHeight);
+ });img.src=src;el.append(img);main.append(el);p.zones.filter(z=>z.p===i&&p.clips[z.c]).sort((a,b)=>a.y-b.y||a.x-b.x).forEach(z=>{let b=document.createElement('button');b.className='zone';b.setAttribute('aria-label',p.clips[z.c].name);Object.assign(b.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%'});b.onclick=()=>choose(z.c);el.append(b);if(!seen.has(z.c)){seen.add(z.c);let item=document.createElement('button'),name=document.createElement('span'),dur=document.createElement('small'),seconds=Math.max(0,Math.round(p.clips[z.c].end-p.clips[z.c].start));name.textContent=p.clips[z.c].name;dur.textContent=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');item.append('▶ ',name,dur);item.onclick=()=>choose(z.c);list.append(item);buttons.push([item,z.c])}})});
  if(!seen.size)list.textContent='Aucun extrait associé au document.';
  const switchViews=[...nav.querySelectorAll('button')];
  const zoomTools=document.createElement('div');
@@ -977,6 +1005,11 @@ function student(){
  const reset=makeZoomButton('100 %','Réinitialiser le zoom',()=>setZoom(100));
  const plus=makeZoomButton('+','Zoomer',()=>setZoom(zoom+25));
  nav.append(zoomTools);
+ const print=document.createElement('button');
+ print.type='button';
+ print.textContent='Imprimer';
+ print.onclick=()=>window.print();
+ nav.append(print);
  function setZoom(value) {
    const center=main.scrollWidth>main.clientWidth?(main.scrollLeft+main.clientWidth/2)/main.scrollWidth:.5;
    const middle=window.innerHeight/2;

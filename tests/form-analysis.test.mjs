@@ -53,9 +53,14 @@ test('Le pré-découpage conserve les intitulés du PDF et privilégie les repè
   const end = html.indexOf("\n$('analyse93').onclick", start);
   assert.ok(start >= 0 && end > start);
   const propose = runInNewContext('(' + html.slice(start,end).trim() + ')');
-  const sections = Array.from(propose([{start:0},{start:24},{start:40},{start:76}], [1,2,3,4], 100));
+  const sections = Array.from(propose([
+    {start:0,end:10}, {start:10,end:18}, {start:32,end:43}, {start:74,end:81},
+    {start:83,end:91}, {start:91,end:100},
+  ], [1,2,3,4], 100));
   assert.deepEqual(sections.map(section => section.name), ['Partie 1','Partie 2','Partie 3','Partie 4']);
-  assert.deepEqual(sections.map(section => section.start), [0,24,50,76]);
-  assert.deepEqual(sections.map(section => section.end), [24,50,76,100]);
+  assert.deepEqual(sections.map(section => section.start), [10,32,null,83]);
+  assert.deepEqual(sections.map(section => section.end), [18,43,null,91]);
   assert.ok(sections.every(section => section.guided && section.leadIn === .5));
+  const noEvidence = Array.from(propose([{start:0,end:100}], [1,2,3,4], 100));
+  assert.ok(noEvidence.every(section => section.start === null && section.end === null));
 });

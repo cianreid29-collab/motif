@@ -220,8 +220,8 @@ async function prepareProject(projectData) {
     ))) throw invalid('Un repère audio est invalide.');
     if (source.form93 !== undefined && (!Array.isArray(source.form93) || source.form93.some(section =>
       !section || typeof section.name !== 'string' || !Number.isInteger(section.group) ||
-      section.group < 0 || !Number.isFinite(section.start) || !Number.isFinite(section.end) ||
-      section.start < 0 || section.end <= section.start
+      section.group < 0 || (!(section.guided === true && section.start === null && section.end === null) &&
+      (!hasSectionRange(section) || section.start < 0))
     ))) throw invalid('Une section de l’analyse musicale est invalide.');
   }
   function validClip(clip) {
@@ -631,18 +631,44 @@ function sectionClipStart(section) {
   return Math.max(0, section.start - lead);
 }
 
+function hasSectionRange(section) {
+  return Number.isFinite(section.start) && Number.isFinite(section.end) && section.end > section.start;
+}
+
 function insertDocumentSectionControls(row, section, field) {
-  if (!section.guided) return;
-  if (chosen93 === 0) field('Entrée ',section.start.toFixed(2),'number',value=>{
+  const select = document.createElement('button');
+  select.textContent = 'Utiliser la sélection audio';
+  select.onclick = () => {
+    const index = source93();
+    const [start,end] = bounds.get(index) || [0,0];
+    if (end <= start) {
+      $('formStatus93').textContent = 'Sélectionne le passage sur l’onde audio, puis réessaie.';
+      return;
+    }
+    Object.assign(section,{start,end});
+    render93();
+  };
+  row.append(select);
+  if (!hasSectionRange(section)) return;
+
+  const max = $('sync').checked ? commonMax() : decoded.get(source93())?.duration;
+  field('Entrée ',section.start.toFixed(2),'number',value=>{
     const time = Number(value);
-    if (value.trim() && time >= 0 && time < section.end - .1) {
+    if (value.trim() && time >= 0 && time < section.end) {
       section.start = time;
       setBounds(source93(), time, section.end);
     }
   });
+  field('Fin ',section.end.toFixed(2),'number',value=>{
+    const time = Number(value);
+    if (value.trim() && time > section.start && time <= Math.ceil(max * 100) / 100) {
+      section.end = Math.min(time,max);
+      setBounds(source93(), section.start, section.end);
+    }
+  });
   field('Avance (s) ',section.leadIn,'number',value=>{
     const seconds = Number(value);
-    if (seconds >= 0 && seconds <= 10) section.leadIn = seconds;
+    if (value.trim() && seconds >= 0 && seconds <= 10) section.leadIn = seconds;
   });
   const listen = document.createElement('button');
   listen.textContent = 'Écouter le début';
@@ -655,7 +681,125 @@ function insertDocumentSectionControls(row, section, field) {
   row.append(listen);
 }
 
-function render93(){let d=data93(),root=$('sections93'),edit=$('edit93');root.replaceChildren();edit.replaceChildren();$('hide93').hidden=$('erase93').hidden=!d;$('restore93').hidden=!previousAnalyses.has(sources[source93()]);$('hide93').textContent=hidden93?'Afficher':'Masquer';if(!d||hidden93)return;let total=d.at(-1)?.end||1;root.style.cssText='display:flex;overflow:hidden;min-height:32px;position:relative';for(let [i,s] of d.entries()){let a=Math.max(s.start,viewStart()),b=Math.min(s.end,viewStart()+viewSpan());if(b<=a)continue;let el=document.createElement('button');el.textContent=s.name;el.title=s.name+' · '+s.start.toFixed(2)+'–'+s.end.toFixed(2)+' s';el.style.cssText=`position:absolute;left:${(a-viewStart())/viewSpan()*100}%;width:${(b-a)/viewSpan()*100}%;background:${colors93[s.group%colors93.length]};color:white;overflow:hidden;white-space:nowrap;padding:5px;${i===chosen93?'outline:2px solid white;outline-offset:-3px':''}`;el.onclick=()=>{chosen93=i;clearSelection();draftTrack=source93();setBounds(draftTrack,s.start,s.end);render93()};root.append(el)}let s=d[chosen93];if(!s)return;let row=document.createElement('div');row.className='tools';function field(label,value,type,fn){let l=document.createElement('label'),x=document.createElement('input');l.textContent=label;x.type=type;x.value=value;if(type==='number')x.step='.01';x.onchange=()=>{fn(x.value);render93()};l.append(x);row.append(l)}field('Nom ',s.name,'text',v=>{if(v.trim())s.name=v.trim()});field('Famille ',s.group+1,'number',v=>{if(Number.isInteger(+v)&&+v>0&&+v<=100)s.group=+v-1});if(chosen93>0)field('Début ',s.start.toFixed(2),'number',v=>{let t=+v,prev=d[chosen93-1];if(t>prev.start+.1&&t<s.end-.1){prev.end=s.start=t;setBounds(source93(),s.start,s.end)}});if(chosen93<d.length-1)field('Fin ',s.end.toFixed(2),'number',v=>{let t=+v,next=d[chosen93+1];if(t>s.start+.1&&t<next.end-.1){next.start=s.end=t;setBounds(source93(),s.start,s.end)}});insertDocumentSectionControls(row,s,field);let b=document.createElement('button');b.textContent='Créer l’extrait';b.onclick=safe(()=>createSectionClips(s));row.append(b);if(chosen93<d.length-1){let m=document.createElement('button');m.textContent='Fusionner avec la suivante';m.onclick=()=>{s.end=d[chosen93+1].end;d.splice(chosen93+1,1);render93()};row.append(m)}edit.append(row)}
+function render93() {
+  const sections = data93(), root = $('sections93'), edit = $('edit93');
+  root.replaceChildren();
+  edit.replaceChildren();
+  $('hide93').hidden = $('erase93').hidden = !sections;
+  $('restore93').hidden = !previousAnalyses.has(sources[source93()]);
+  $('hide93').textContent = hidden93 ? 'Afficher' : 'Masquer';
+  if (!sections || hidden93) return;
+
+  const guided = sections[0]?.guided;
+  root.style.cssText = guided ? '' : 'display:flex;overflow:hidden;min-height:32px;position:relative';
+  const list = document.createElement('div');
+  list.className = 'tools';
+  const viewFrom = viewStart(), span = viewSpan();
+  function selectSection(section,index) {
+    chosen93 = index;
+    clearSelection();
+    draftTrack = source93();
+    if (hasSectionRange(section)) setBounds(draftTrack,section.start,section.end);
+    render93();
+  }
+
+  for (const [index,section] of sections.entries()) {
+    const placed = hasSectionRange(section);
+    const label = placed ? section.name + ' · ' + section.start.toFixed(2) + '–' + section.end.toFixed(2) + ' s'
+      : section.name + ' · à placer';
+    if (guided) {
+      const button = document.createElement('button');
+      button.textContent = label;
+      button.setAttribute('aria-pressed', String(index === chosen93));
+      button.onclick = () => selectSection(section,index);
+      list.append(button);
+    }
+  }
+
+  const timeline = guided ? document.createElement('div') : root;
+  if (guided) {
+    timeline.setAttribute('aria-hidden','true');
+    timeline.style.cssText = 'position:relative;height:12px;margin:8px 0;background:#8882';
+    root.append(list,timeline);
+  }
+  for (const [index,section] of sections.entries()) {
+    if (!hasSectionRange(section)) continue;
+    const from = Math.max(section.start,viewFrom), to = Math.min(section.end,viewFrom + span);
+    if (to <= from) continue;
+    const bar = document.createElement(guided ? 'span' : 'button');
+    if (!guided) {
+      bar.textContent = section.name;
+      bar.title = section.name + ' · ' + section.start.toFixed(2) + '–' + section.end.toFixed(2) + ' s';
+      bar.onclick = () => selectSection(section,index);
+    }
+    const color = colors93[section.group % colors93.length];
+    bar.style.cssText = `position:absolute;left:${(from-viewFrom)/span*100}%;width:${(to-from)/span*100}%;background:${color};color:white;white-space:nowrap;overflow:hidden;`;
+    if (guided) bar.style.height = '100%';
+    else bar.style.padding = '5px';
+    if (index === chosen93) {
+      bar.style.outline = '2px solid currentColor';
+      bar.style.outlineOffset = '-3px';
+    }
+    timeline.append(bar);
+  }
+
+  const section = sections[chosen93];
+  if (!section) return;
+  const row = document.createElement('div');
+  row.className = 'tools';
+  function field(label,value,type,change) {
+    const wrapper = document.createElement('label'), input = document.createElement('input');
+    wrapper.textContent = label;
+    input.type = type;
+    input.value = value;
+    if (type === 'number') input.step = '.01';
+    input.onchange = () => { change(input.value); render93(); };
+    wrapper.append(input);
+    row.append(wrapper);
+  }
+  field('Nom ',section.name,'text',value=>{ if(value.trim()) section.name=value.trim(); });
+  if (guided) {
+    insertDocumentSectionControls(row,section,field);
+  } else {
+    field('Famille ',section.group+1,'number',value=>{
+      const group = Number(value);
+      if (Number.isInteger(group) && group>0 && group<=100) section.group=group-1;
+    });
+    const previous = sections[chosen93-1], next = sections[chosen93+1];
+    if (previous) field('Début ',section.start.toFixed(2),'number',value=>{
+      const time = Number(value);
+      if (time>previous.start+.1 && time<section.end-.1) {
+        previous.end=section.start=time;
+        setBounds(source93(),section.start,section.end);
+      }
+    });
+    if (next) field('Fin ',section.end.toFixed(2),'number',value=>{
+      const time = Number(value);
+      if (time>section.start+.1 && time<next.end-.1) {
+        next.start=section.end=time;
+        setBounds(source93(),section.start,section.end);
+      }
+    });
+  }
+  if (hasSectionRange(section)) {
+    const create = document.createElement('button');
+    create.textContent = 'Créer l’extrait';
+    create.onclick = safe(()=>createSectionClips(section));
+    row.append(create);
+  }
+  if (!guided && sections[chosen93+1]) {
+    const merge = document.createElement('button');
+    merge.textContent = 'Fusionner avec la suivante';
+    merge.onclick = () => {
+      section.end=sections[chosen93+1].end;
+      sections.splice(chosen93+1,1);
+      render93();
+    };
+    row.append(merge);
+  }
+  edit.append(row);
+}
+
 $('hide93').onclick=()=>{hidden93=!hidden93;render93()};
 
 function showAnalysis(message) {
@@ -694,24 +838,24 @@ function finishAnalysis(job, message) {
 
 function proposeDocumentSections(candidates, parts, duration) {
   const interval = duration / parts.length;
-  const starts = [0];
-  for (let index = 1; index < parts.length; index++) {
-    const target = index * interval;
-    let chosen = target;
-    let deviation = interval * .32;
-    for (const candidate of candidates) {
-      const error = Math.abs(candidate.start - target);
-      if (error < deviation) {
-        chosen = candidate.start;
-        deviation = error;
-      }
-    }
-    starts.push(chosen);
+  const matches = new Map();
+  for (const candidate of candidates) {
+    // Keep actual detected stretches. Long stretches or stretches at the edges
+    // do not give enough evidence for a particular written section.
+    if (candidate.start === 0 || candidate.end >= duration || candidate.end - candidate.start > interval) continue;
+    const center = (candidate.start + candidate.end) / 2;
+    const index = Math.floor(center / interval);
+    const distance = Math.abs(center - (index + .5) * interval);
+    if (distance > interval * .35 || distance >= (matches.get(index)?.distance ?? Infinity)) continue;
+    matches.set(index,{candidate,distance});
   }
-  return parts.map((part,index) => ({
-    name:'Partie ' + part, group:index, start:starts[index], end:starts[index+1] ?? duration,
-    guided:true, leadIn:.5,
-  }));
+  return parts.map((part,index) => {
+    const range = matches.get(index)?.candidate;
+    return {
+      name:'Partie ' + part, group:index, start:range?.start ?? null, end:range?.end ?? null,
+      guided:true, leadIn:.5,
+    };
+  });
 }
 
 $('analyse93').onclick = () => runFormAnalysis(false);
@@ -773,12 +917,12 @@ async function runFormAnalysis(guided) {
       }
       const sections = guided ? proposeDocumentSections(data.sections, parts, duration) : data.sections;
       const message = guided
-        ? sections.length + ' partie(s) du PDF · débuts estimés à écouter et à corriger'
+        ? sections.filter(hasSectionRange).length + ' / ' + sections.length + ' parties du PDF pré-découpées. Vérifie les plages à l’écoute et place les autres.'
         : mode + ' · ' + sections.length + ' section(s) proposée(s) · à vérifier à l’écoute';
       if (!finishAnalysis(job, message)) return;
       if (source.form93) previousAnalyses.set(source, source.form93);
       source.form93 = sections;
-      source.form93.at(-1).end = duration;
+      if (!guided) source.form93.at(-1).end = duration;
       showAnalysis(message);
     };
     job.worker.postMessage({samples, sr, granularity}, [samples.buffer]);

@@ -57,12 +57,13 @@
 </details><details id="shareMenu" class="motifShare">
 <summary>Partager</summary>
 <div class="motifShareChoices">
+<button id="publishHosted" hidden>Créer un lien public</button>
 <button id="publishDemo">Connecter GitHub pour publier</button>
 <button id="exportWeb">Préparer un ZIP pour le Web</button>
 <button id="export">Télécharger le document élève (.html)</button>
 <button id="disconnectDemo" hidden>Déconnecter GitHub</button>
 </div>
-</details></header><main><aside><h3>1. Sources</h3><label>Document PDF ou images</label><input id="pdf" type="file" accept="application/pdf,image/*" multiple><label>Ajouter des ressources audio</label><button class="primary" id="addAudio" style="width:100%">＋ Ajouter un audio</button><input id="audio" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg" multiple hidden><small>Chaque import ajoute une piste sans remplacer les précédentes.</small><label>Ressources actives</label><div id="resourceList"></div><details style="margin-top:12px"><summary>Remplacer une piste existante</summary><label>Source à remplacer</label><select id="source"></select><button id="replaceAudio">Remplacer la source</button></details><input id="replacement" type="file" accept="audio/*" hidden><h3>2. Extraits</h3><div id="clips"></div><div class="tools"><button id="renameClip" disabled>Renommer l’extrait</button><button id="deleteClip" disabled>Supprimer l’extrait</button></div><h3>3. Zones</h3><label>Couleur de la zone <input id="zoneColor" type="color" value="#6954b5"></label><button id="draw">Dessiner une zone</button><p><small>Sélectionne un extrait, puis trace un rectangle sur la page. Déplace-le ou redimensionne-le par son angle.</small></p><button id="remove">Supprimer la zone</button><button id="assign">Associer l’extrait sélectionné</button><hr><label>Ouvrir un projet (.motif)</label><input id="load" type="file" accept=".motif,.json"></aside><div><section id="editor"><h3 style="margin-top:0">Éditeur multipiste</h3><div id="multi"></div><canvas id="wave" width="1200" height="160"></canvas><div class="tools"><label>Version instrumentale <select id="karaSource"><option value="">Aucune</option></select></label><label><input id="sync" type="checkbox" checked> Synchroniser le découpage</label></div><div id="karaPanel" hidden><strong style="color:#218570">Instrumental / karaoké</strong><canvas id="wave2" width="1200" height="160"></canvas><div class="tools"><label>Début (s) <input id="ks" type="number" min="0" step="0.01" value="0"></label><label>Fin (s) <input id="ke" type="number" min="0" step="0.01" value="10"></label><button id="listenK">Écouter l’instrumental</button></div></div><small>Glisse pour sélectionner. Clique dans la sélection pour placer le curseur, puis appuie sur Lecture. J et L reculent ou avancent de 5 s. K met en pause.</small><div class="tools"><label>Début (s)<input id="start" type="number" min="0" step="0.01" value="0"></label><label>Fin (s)<input id="end" type="number" min="0" step="0.01" value="10"></label><label><span title="Fondu entrée (s)">◢</span><input aria-label="Fondu entrée (s)" id="fi" type="number" min="0" step="0.05" value="0.1"></label><label><span title="Fondu sortie (s)">◣</span><input aria-label="Fondu sortie (s)" id="fo" type="number" min="0" step="0.05" value="0.2"></label><label>Nom<input id="name" placeholder="Couplet 1"></label></div><div class="tools" style="margin-top:12px"><button id="listen">Écouter la sélection</button><button id="stop">Arrêter</button><label style="margin:0"><input id="loop" type="checkbox"> Boucle</label><button class="primary" id="add">Créer l’extrait</button><button id="newClip">Nouvel extrait</button><button id="updateClip">Modifier l’extrait</button><button id="placeClip" disabled>Placer sur la fiche ↓</button></div></section><div id="pagesNavigation"><button id="returnToWave">Retour à l’onde ↑</button><small class="placementHint" id="placementHint" aria-live="polite"></small></div><div id="pages"><p style="text-align:center;color:#666">Importe ton document Canva pour commencer.</p></div></div></main><script type="module">
+</details></header><main><aside><h3>1. Sources</h3><label>Document PDF ou images</label><input id="pdf" type="file" accept="application/pdf,image/*" multiple><label>Ajouter des ressources audio</label><button class="primary" id="addAudio" style="width:100%">＋ Ajouter un audio</button><input id="audio" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg" multiple hidden><small>Chaque import ajoute une piste sans remplacer les précédentes.</small><label>Ressources actives</label><div id="resourceList"></div><details style="margin-top:12px"><summary>Remplacer une piste existante</summary><label>Source à remplacer</label><select id="source"></select><button id="replaceAudio">Remplacer la source</button></details><input id="replacement" type="file" accept="audio/*" hidden><h3>2. Extraits</h3><div id="clips"></div><div class="tools"><button id="renameClip" disabled>Renommer l’extrait</button><button id="deleteClip" disabled>Supprimer l’extrait</button></div><h3>3. Zones</h3><label>Couleur de la zone <input id="zoneColor" type="color" value="#6954b5"></label><button id="draw">Dessiner une zone</button><p><small>Sélectionne un extrait, puis trace un rectangle sur la page. Déplace-le ou redimensionne-le par son angle.</small></p><button id="remove">Supprimer la zone</button><button id="assign">Associer l’extrait sélectionné</button><hr><label>Ouvrir un projet (.motif)</label><input id="load" type="file" accept=".motif,.json"></aside><div><section id="editor"><h3 style="margin-top:0">Éditeur multipiste</h3><div id="multi"></div><canvas id="wave" width="1200" height="160"></canvas><div class="tools"><label>Version instrumentale <select id="karaSource"><option value="">Aucune</option></select></label><label><input id="sync" type="checkbox" checked> Synchroniser le découpage</label></div><div id="karaPanel" hidden><strong style="color:#218570">Instrumental / karaoké</strong><canvas id="wave2" width="1200" height="160"></canvas><div class="tools"><label>Début (s) <input id="ks" type="number" min="0" step="0.01" value="0"></label><label>Fin (s) <input id="ke" type="number" min="0" step="0.01" value="10"></label><button id="listenK">Écouter l’instrumental</button></div></div><small>Glisse pour sélectionner. Clique dans la sélection pour placer le curseur, puis appuie sur Lecture. J et L reculent ou avancent de 5 s. K met en pause.</small><div class="tools"><label>Début (s)<input id="start" type="number" min="0" step="0.01" value="0"></label><label>Fin (s)<input id="end" type="number" min="0" step="0.01" value="10"></label><label><span title="Fondu entrée (s)">◢</span><input aria-label="Fondu entrée (s)" id="fi" type="number" min="0" step="0.05" value="0.1"></label><label><span title="Fondu sortie (s)">◣</span><input aria-label="Fondu sortie (s)" id="fo" type="number" min="0" step="0.05" value="0.2"></label><label>Nom<input id="name" placeholder="Couplet 1"></label></div><div class="tools" style="margin-top:12px"><button id="listen">Écouter la sélection</button><button id="stop">Arrêter</button><label style="margin:0"><input id="loop" type="checkbox"> Boucle</label><button class="primary" id="add">Créer l’extrait</button><button id="newClip">Nouvel extrait</button><button id="updateClip">Modifier l’extrait</button><button id="placeClip" disabled>Placer sur la fiche ↓</button></div></section><div id="pagesNavigation"><button id="returnToWave">Retour à l’onde ↑</button><small class="placementHint" id="placementHint" aria-live="polite"></small></div><div id="pages"><p style="text-align:center;color:#666">Importe ton document Canva pour commencer.</p></div></div></main><script src="./sharing-config.js"></script><script type="module">
 const $=id=>document.getElementById(id);let pages=[],documentParts=[],sources=[],clips=[],zones=[],selected=-1,zoneSelected=-1,drawing=false,preview=false,ctx,playing,bufferCache=new Map();const status=s=>$('status').textContent=s;const read=f=>new Promise((r,j)=>{let x=new FileReader;x.onload=()=>r(x.result);x.onerror=j;x.readAsDataURL(f)});const ac=()=>ctx??=new AudioContext();async function decode(i){if(!bufferCache.has(i))bufferCache.set(i,await ac().decodeAudioData(await (await fetch(sources[i].data)).arrayBuffer()));return bufferCache.get(i)}let scrubbing=false,scrubWasPlaying=false;let creatorPaused=false, transportClip=null, transportOffset=0, transportStart=0, transportEpoch=0;
 function stop(){transportEpoch++;creatorPaused=false;transportClip=null;transportOffset=0;if(playing){let old=playing;playing=null;try{old.stop()}catch{}}if(ctx?.state==='suspended')ctx.resume()}
 async function play(c,offset=0){stop();let epoch=transportEpoch;let d=c.end-c.start;if(d<=0)return;offset=Math.max(0,Math.min(d,offset));if(offset>=d)offset=0;transportClip={...c};transportOffset=offset;await ac().resume();let b=await decode(c.source);if(epoch!==transportEpoch)return;let s=ac().createBufferSource(),g=ac().createGain(),t=ac().currentTime;s.buffer=b;s.connect(g);g.connect(ac().destination);let a=Math.min(c.fi||0,d/2),z=Math.min(c.fo||0,d/2);let gain=x=>Math.max(0,Math.min(1,a?x/a:1,z?(d-x)/z:1));g.gain.setValueAtTime(gain(offset),t);for(let x of [a,d-z,d])if(x>offset)g.gain.linearRampToValueAtTime(gain(x),t+x-offset);transportClip={...c};transportOffset=offset;transportStart=t;playing=s;s.start(t,c.start+offset,d-offset);s.onended=()=>{if(playing===s){playing=null;transportOffset=d;if($('loop').checked&&!preview)play(c)}}}
@@ -368,10 +369,12 @@ const demoPublication={
 let demoToken='', demoPublishing=false;
 try { demoToken=localStorage.getItem(demoPublication.tokenKey)||''; } catch {}
 
-function demoDocumentTarget(title) {
-  const slug=title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+function publicationSlug(title) {
+  return title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
     .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,55)||'fiche-motif';
-  return webExportTarget(demoPublication.site+slug+'-'+uid()+'.html');
+}
+function demoDocumentTarget(title) {
+  return webExportTarget(demoPublication.site+publicationSlug(title)+'-'+uid()+'.html');
 }
 
 async function demoRequest(token,path,method='GET',body) {
@@ -426,7 +429,7 @@ async function demoBase64(file) {
   return (await read(file)).split(',',2)[1];
 }
 
-async function prepareDemoDocument() {
+async function preparePublicDocument(makeTarget) {
   checkStudentExport();
   const snapshot=structuredClone(project());
   const used=[...new Set(snapshot.zones.map(zone=>zone.c))];
@@ -440,12 +443,17 @@ async function prepareDemoDocument() {
     ac().decodeAudioData(await (await fetch(snapshot.sources[index].data)).arrayBuffer());
   const exported=await compactAudio(await v7Compress(snapshot,quality),quality,getBuffer);
   const title=exported.title.trim()||'Document MOTIF';
-  const target=demoDocumentTarget(title);
+  const target=makeTarget(title);
   const html=new Blob([studentDocumentHTML(exported,studentShareHead(title,target))],{type:'text/html'});
   if (html.size>25*1024*1024) {
     throw Error('La fiche dépasse 25 Mio. Choisis la qualité légère dans le mode Avancé ou raccourcis les extraits.');
   }
   const cover=await exportCover(exported.pages[0],title);
+  return {target,html,cover};
+}
+
+async function prepareDemoDocument() {
+  const {target,html,cover}=await preparePublicDocument(demoDocumentTarget);
   return {target,files:await Promise.all([[target.page,html],[target.image,cover]]
     .map(async([name,file])=>({name,content:await demoBase64(file)})))};
 }
@@ -554,6 +562,89 @@ $('publishDemo').onclick=safe(async()=>{
     demoPublishing=false;
   }
 });
+
+const hostedPublication=window.MOTIF_PUBLICATION;
+if (hostedPublication?.publisherOrigin&&hostedPublication?.publicOrigin) {
+  const button=$('publishHosted');
+  button.hidden=false;
+  button.onclick=safe(()=>{
+    checkStudentExport();
+    const publisher=new URL(hostedPublication.publisherOrigin);
+    const targetOrigin=new URL(hostedPublication.publicOrigin);
+    if (publisher.protocol!=='https:'||targetOrigin.protocol!=='https:'||publisher.origin===targetOrigin.origin) {
+      throw Error('Les adresses de publication MOTIF doivent être configurées en HTTPS.');
+    }
+    const popup=window.open(new URL('/publish',publisher),'_blank','popup,width=500,height=370');
+    if (!popup) throw Error('Autorise la fenêtre de publication dans ton navigateur.');
+    button.disabled=true;
+    status('Ouverture de la publication…');
+    let sent=false, expected;
+    function finish() {
+      window.removeEventListener('message',receive);
+      clearInterval(watch);
+      button.disabled=false;
+    }
+    const started=Date.now();
+    const watch=setInterval(()=>{
+      if (!popup.closed&&Date.now()-started<5*60*1000) return;
+      finish();
+      status('Publication interrompue.');
+    },500);
+    async function receive(event) {
+      if (event.source!==popup||event.origin!==publisher.origin) return;
+      if (event.data?.type==='motif-publisher-ready'&&!sent) {
+        sent=true;
+        try {
+          const document=await preparePublicDocument(title=>{
+            const slug=publicationSlug(title);
+            const id=slug+'-'+crypto.randomUUID().replaceAll('-','');
+            return webExportTarget(new URL('/'+id+'/index.html',targetOrigin).href);
+          });
+          expected=document.target.url.href;
+          const id=document.target.url.pathname.split('/')[1];
+          popup.postMessage({type:'motif-publish',id,html:document.html,cover:document.cover},publisher.origin);
+        } catch(error) {
+          finish();
+          popup.close();
+          status(error.message);
+        }
+      } else if (event.data?.type==='motif-publish-error'&&sent) {
+        finish();
+        status('Le service de publication n’a pas enregistré la fiche.');
+      } else if (event.data?.type==='motif-published'&&expected&&event.data.url===expected) {
+        finish();
+        popup.close();
+        showPublicLink(expected);
+      }
+    }
+    window.addEventListener('message',receive);
+  });
+}
+
+async function showPublicLink(url) {
+  const dialog=dialog75('Lien public de la fiche');
+  const row=document.createElement('div');
+  row.innerHTML='<label>Adresse HTTPS <input type="url" readonly></label>'+
+    '<button type="button">Copier le lien</button> <a target="_blank" rel="noopener noreferrer">Ouvrir la fiche</a>'+
+    ' <span role="status"></span>';
+  const field=row.querySelector('input');
+  field.value=url;
+  row.querySelector('a').href=url;
+  const copy=async()=>{
+    try {
+      await navigator.clipboard.writeText(url);
+      row.querySelector('[role=status]').textContent='Lien copié.';
+    } catch {
+      field.focus();
+      field.select();
+      row.querySelector('[role=status]').textContent='Lien sélectionné. Utilise ⌘C ou Ctrl+C.';
+    }
+  };
+  row.querySelector('button').onclick=copy;
+  dialog.append(row);
+  status('Fiche publiée.');
+  await copy();
+}
 
 function studentDocumentHTML({documentParts, sync, ...projectData},head='<title>Document MOTIF.</title>') {
  const data=JSON.stringify(projectData).replace(/</g,'\\u003c');

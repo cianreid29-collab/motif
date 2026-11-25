@@ -91,6 +91,9 @@ function studentAnnotations(project,nav,main) {
       display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid #ded6ed}
     .annotationTools button{border:1px solid #ded6ed;border-radius:8px;background:#fff;color:#44337b;padding:7px 10px;min-height:40px}
     .annotationTools button[aria-pressed=true]{outline:2px solid #6954bd;outline-offset:-3px}
+    .annotationTools .toolIcon{display:inline-flex;align-items:center;gap:6px}
+    .annotationTools .toolIcon svg{width:18px;height:18px}
+    .annotationColors{display:flex;flex-wrap:wrap;gap:6px}
     .annotationTools .swatch{background:var(--swatch);color:#251930}
     .annotationTools small{align-self:center}
     @media(max-width:600px){.annotationTools{position:relative;top:auto}}
@@ -124,9 +127,12 @@ function studentAnnotations(project,nav,main) {
   nav.after(bar);
   const toggle=document.createElement('button');
   toggle.textContent='Annoter';
+  toggle.title='B : crayon, fluo, écoute';
+  toggle.setAttribute('aria-keyshortcuts','B');
   toggle.setAttribute('aria-pressed','false');
   nav.append(toggle);
-  let mode='pen', active=false, visible=true, current=null;
+  let mode='pen', highlighter='Jaune', active=false, visible=true, current=null;
+  const undone=[];
   function button(label,action) {
     const btn=document.createElement('button');
     btn.type='button';
@@ -135,20 +141,34 @@ function studentAnnotations(project,nav,main) {
     bar.append(btn);
     return btn;
   }
-  const tools={};
-  tools.pen=button('Crayon',()=>choose('pen'));
+  function tool(label,path,action) {
+    const btn=button(label,action);
+    btn.className='toolIcon';
+    btn.insertAdjacentHTML('afterbegin',
+      `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`);
+    return btn;
+  }
+  const pen=tool('Crayon','M4 20l4-1 12-12-3-3L5 16l-1 4z M15 6l3 3',()=>choose('pen'));
+  const marker=tool('Fluo','m8 15 8-11 4 3-8 11-4-3z M8 15l-3 4 4 1 3-2 M3 22h10',()=>choose(highlighter));
+  const colors=document.createElement('div');
+  colors.className='annotationColors';
+  colors.setAttribute('role','group');
+  colors.setAttribute('aria-label','Couleur du fluo');
+  bar.append(colors);
+  const swatches={};
   for (const [name,color] of Object.entries(palette)) {
-    const swatch=tools[name]=button(name,()=>choose(name));
+    const swatch=swatches[name]=button(name,()=>choose(name));
     swatch.className='swatch';
     swatch.style.setProperty('--swatch',color);
     swatch.setAttribute('aria-label','Fluo '+name.toLowerCase());
+    colors.append(swatch);
   }
-  const undo=button('Annuler le dernier trait',()=>{
-    if (!strokes.length) return;
-    strokes.pop();
-    save();
-    refresh();
-  });
+  const undo=tool('Annuler','M9 8H4l5-5 M4 8h10a6 6 0 1 1 0 12h-5',()=>moveStroke(strokes,undone));
+  undo.title='Annuler le dernier trait';
+  undo.setAttribute('aria-keyshortcuts','Control+Z Meta+Z');
+  const redo=tool('Rétablir','M15 8h5l-5-5 M20 8H10a6 6 0 1 0 0 12h5',()=>moveStroke(undone,strokes));
+  redo.title='Rétablir le dernier trait annulé';
+  redo.setAttribute('aria-keyshortcuts','Control+Y Control+Shift+Z Meta+Shift+Z');
   const original=button('Voir l’original',()=>{
     visible=!visible;
     current=null;
@@ -218,6 +238,7 @@ function studentAnnotations(project,nav,main) {
       const {page,tip,points}=current;
       if (points.length>1) points.push(point(event));
       strokes.push({page,tip,points});
+      undone.length=0;
       current=null;
       save();
       refresh();
@@ -237,8 +258,18 @@ function studentAnnotations(project,nav,main) {
       storageAvailable=true;
     } catch { storageAvailable=false; }
   }
+  function moveStroke(from,to) {
+    if (!visible || !from.length) return;
+    current=null;
+    to.push(from.pop());
+    save();
+    refresh();
+  }
   function choose(tip) {
+    current=null;
+    active=true;
     mode=tip;
+    if (tip!=='pen') highlighter=tip;
     visible=true;
     refresh();
   }
@@ -249,19 +280,44 @@ function studentAnnotations(project,nav,main) {
     toggle.textContent=active?'Terminer les annotations':'Annoter';
     original.textContent=visible?'Voir l’original':'Afficher les annotations';
     undo.disabled=!strokes.length||!visible;
-    for (const [tip,btn] of Object.entries(tools)) btn.setAttribute('aria-pressed',String(mode===tip));
+    redo.disabled=!undone.length||!visible;
+    pen.setAttribute('aria-pressed',String(mode==='pen'));
+    marker.setAttribute('aria-pressed',String(mode!=='pen'));
+    colors.hidden=mode==='pen';
+    for (const [tip,btn] of Object.entries(swatches)) btn.setAttribute('aria-pressed',String(mode===tip));
     for (const {canvas,paint} of layers) {
       canvas.classList.toggle('drawing',active&&visible&&!main.hidden);
       paint();
     }
     info.textContent=storageAvailable?'Annotations conservées dans ce navigateur.':'Sauvegarde locale indisponible dans ce navigateur.';
   }
-  toggle.onclick=()=>{
-    active=!active;
+  function closeTools() {
+    active=false;
     current=null;
-    if (active) visible=true;
     refresh();
-  };
+  }
+  toggle.onclick=()=>active ? closeTools() : choose('pen');
+  document.addEventListener('keydown',event=>{
+    if (main.hidden || event.defaultPrevented || event.altKey ||
+      event.target.closest?.('input,select,textarea,[contenteditable]')) return;
+    const key=event.key.toLowerCase();
+    if (key==='b' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      event.preventDefault();
+      if (event.repeat) return;
+      if (!active) choose('pen');
+      else if (mode==='pen') choose(highlighter);
+      else closeTools();
+      return;
+    }
+    if (!visible || !(event.ctrlKey||event.metaKey)) return;
+    const forward=(key==='z'&&event.shiftKey)||(key==='y'&&event.ctrlKey);
+    const backward=key==='z'&&!event.shiftKey;
+    if ((forward&&undone.length)||(backward&&strokes.length)) {
+      event.preventDefault();
+      if (forward) moveStroke(undone,strokes);
+      else moveStroke(strokes,undone);
+    }
+  });
   if (window.ResizeObserver) new ResizeObserver(()=>{
     document.body.style.setProperty('--annotation-nav-height',nav.offsetHeight+'px');
   }).observe(nav);

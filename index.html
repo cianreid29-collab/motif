@@ -1256,7 +1256,7 @@ async function buildMulti(){let rev=++multiEpoch;for(let i of activeIds){let b=a
   }
   await toggleCreatorPlayback(draftClip(i));
 });installMarkerTools(panel,c,i);
-let gesture, clickedSelection=false;
+let gesture, lastSelectionClick;
 const trackLimit = () => usesSyncedBounds(i) ? commonMax() : decoded.get(i).duration;
 c.onkeydown=event=>{
   if (!(event.ctrlKey||event.metaKey)||event.altKey||event.key.toLowerCase()!=='a') return;
@@ -1282,8 +1282,10 @@ function waveDragMode(time,a,b) {
   return time>a&&time<b?'move':'new';
 }
 c.onpointerdown = event => {
-  clickedSelection=false;
-  if (event.button !== 0 || c.dataset.markerMode === '1') return;
+  if (event.button !== 0 || c.dataset.markerMode === '1') {
+    lastSelectionClick=null;
+    return;
+  }
   c.focus({preventScroll:true});
   if (!editingClipOn(i)) clearSelection();
   draftTrack=i;
@@ -1325,27 +1327,29 @@ c.onpointerup=event=>{
   const {start,a,b,moved,before}=gesture;
   gesture=null;
   if (moved) capture75(before);
-  clickedSelection=!moved&&start>=a&&start<b;
-  if (clickedSelection) {
-    seekCreator(start-a,false,draftClip(i));
-    status('Curseur placé. Appuie sur Lecture pour écouter.');
-  } else if (moved && bounds.get(i)[1]>bounds.get(i)[0]) {
+  if (!moved && start>=a && start<b) {
+    const doubleClick=lastSelectionClick &&
+      lastSelectionClick.a===a&&lastSelectionClick.b===b &&
+      event.timeStamp-lastSelectionClick.time<=500 &&
+      Math.hypot(event.clientX-lastSelectionClick.x,event.clientY-lastSelectionClick.y)<=10;
+    lastSelectionClick=doubleClick?null:{a,b,time:event.timeStamp,x:event.clientX,y:event.clientY};
+    seekCreator(doubleClick?0:start-a,false,draftClip(i));
+    status(doubleClick?'Curseur au début de la sélection. Appuie sur Lecture pour écouter.'
+      :'Curseur placé. Appuie sur Lecture pour écouter.');
+    return;
+  }
+  lastSelectionClick=null;
+  if (moved && bounds.get(i)[1]>bounds.get(i)[0]) {
     status(editingClipOn(i)
       ? 'Bornes ajustées. Clique sur « Modifier l’extrait » pour enregistrer.'
       : 'Passage sélectionné. Clique dans l’onde pour placer le curseur ou sur « Créer l’extrait ».');
   }
 };
-c.ondblclick=event=>{
-  if (!clickedSelection||c.dataset.markerMode==='1') return;
-  const [a,b]=bounds.get(i), time=pointerTime(event);
-  if (time<a||time>=b) return;
-  event.preventDefault();
-  seekCreator(0,false,draftClip(i));
-  status('Curseur au début de la sélection. Appuie sur Lecture pour écouter.');
-};
 c.onpointercancel=c.onlostpointercapture=()=>{
-  if (gesture?.moved) capture75(gesture.before);
+  if (!gesture) return;
+  if (gesture.moved) capture75(gesture.before);
   gesture=null;
+  lastSelectionClick=null;
 };
 root.append(panel)}if(selected<0&&$('sync').checked&&activeIds.length){let [a,b]=bounds.get(activeIds[0]);setBounds(activeIds[0],a,b)}else paintAll();showResources()}
 function trackClip(i){let [start,end]=bounds.get(i)||[0,0];return {...current(),source:i,start,end,label:sources[i].label||sources[i].name}}

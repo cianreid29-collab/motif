@@ -109,13 +109,16 @@ function studentTextBoxes(main,bar,key,reportStorage) {
   controls.setAttribute('role','group');
   controls.setAttribute('aria-label','Mise en forme du texte');
   bar.append(controls);
-  let current=null,typing=null,editing=false,visible=true,armed=false;
+  let current=null,typing=null,editing=false,visible=true,armed=false,selecting=false;
   let selection=new Set();
   const selectTool=document.createElement('button');
   selectTool.type='button';
   selectTool.textContent='Sélectionner';
   selectTool.title='Glisse sur la fiche pour sélectionner plusieurs boîtes';
-  selectTool.onclick=()=>setSelection([]);
+  selectTool.onclick=()=>{
+    selecting=true;
+    setSelection([]);
+  };
   controls.append(selectTool);
   const add=document.createElement('button');
   add.type='button';
@@ -124,6 +127,7 @@ function studentTextBoxes(main,bar,key,reportStorage) {
   controls.append(add);
   function arm() {
     if (!editing || !visible) return;
+    selecting=false;
     setSelection([]);
     armed=true;
     refresh(editing,visible);
@@ -189,16 +193,8 @@ function studentTextBoxes(main,bar,key,reportStorage) {
       if (!editing || event.target!==layer || event.button!==0) return;
       event.preventDefault();
       const [x,y]=coords(event);
-      if (armed) {
-        const record={page:index,x:Math.min(x,.64),y:Math.min(y,.88),w:.36,h:.12,
-          text:'',color:'Noir',font:'Arial',size:'Moyenne'};
-        records.push(record);
-        mount(record);
-        editText(record);
-        return;
-      }
-      setSelection([]);
-      drag={id:event.pointerId,clientX:event.clientX,clientY:event.clientY,x,y};
+      if (!armed) setSelection([]);
+      drag={id:event.pointerId,clientX:event.clientX,clientY:event.clientY,x,y,placing:armed};
       layer.setPointerCapture(event.pointerId);
     };
     function rectangle(event) {
@@ -218,10 +214,23 @@ function studentTextBoxes(main,bar,key,reportStorage) {
     layer.onpointerup=event=>{
       if (drag?.id!==event.pointerId) return;
       const rect=rectangle(event);
-      if (rect) setSelection(records.filter(box=>box.page===index&&
-        box.x<rect.x+rect.w&&box.x+box.w>rect.x&&box.y<rect.y+rect.h&&box.y+box.h>rect.y));
+      const {placing,x,y}=drag;
       marquee.hidden=true;
       drag=null;
+      if (placing) {
+        if (!armed || !editing) return;
+        const w=rect?Math.max(rect.w,.04):.36;
+        const h=rect?Math.max(rect.h,.035):.12;
+        const record={page:index,x:Math.min(rect?.x??x,1-w),y:Math.min(rect?.y??y,1-h),
+          w,h,text:'',color:'Noir',font:'Arial',size:'Moyenne'};
+        records.push(record);
+        mount(record);
+        editText(record);
+      } else if (rect && editing) {
+        selecting=true;
+        setSelection(records.filter(box=>box.page===index&&
+          box.x<rect.x+rect.w&&box.x+box.w>rect.x&&box.y<rect.y+rect.h&&box.y+box.h>rect.y));
+      }
     };
     layer.onpointercancel=layer.onlostpointercapture=()=>{marquee.hidden=true;drag=null;};
     if (window.ResizeObserver) new ResizeObserver(()=>resize(index)).observe(page);
@@ -247,6 +256,7 @@ function studentTextBoxes(main,bar,key,reportStorage) {
   }
   function editText(record) {
     if (!record) return;
+    selecting=false;
     select(record);
     typing=record;
     refresh(editing,visible);
@@ -347,14 +357,15 @@ function studentTextBoxes(main,bar,key,reportStorage) {
     visible=show;
     if (!editing || !visible) {
       armed=false;
+      selecting=false;
       current=null;
       typing=null;
       selection.clear();
     }
     controls.hidden=!editing||!visible;
     add.setAttribute('aria-pressed',String(armed));
-    add.title=armed?'Clique sur la fiche pour poser la zone':'Ajouter une zone de texte';
-    selectTool.setAttribute('aria-pressed',String(!armed));
+    add.title=armed?'Trace la zone sur la fiche ou touche une fois pour la poser':'Ajouter une zone de texte';
+    selectTool.setAttribute('aria-pressed',String(selecting&&!armed));
     for (const control of [color,font,size,edit]) control.disabled=!current;
     remove.disabled=!selection.size;
     remove.textContent=selection.size>1?'Supprimer ('+selection.size+')':'Supprimer';
@@ -423,9 +434,10 @@ function studentAnnotations(project,nav,main) {
     .studentTextBox textarea{display:block;width:100%;height:100%;margin:0;padding:1px 3px;resize:none;border:0;
       border-radius:0;background:transparent;overflow:hidden;line-height:1.15;pointer-events:none}
     .annotationTextLayer.editing .studentTextBox{cursor:default;touch-action:none}
-    .annotationTextLayer.editing:not(.placing){touch-action:none}
+    .annotationTextLayer.editing{touch-action:none}
     .annotationTextLayer.editing .textTyping textarea{pointer-events:auto;overflow:auto;touch-action:auto}
     .textMarquee{position:absolute;z-index:3;pointer-events:none;border:1px solid #6954b5;background:#7963c329}
+    .annotationTextLayer.placing .textMarquee{border-style:dashed}
     .annotationTextLayer.editing .studentTextBox:hover textarea{outline:1px dashed #6954b5}
     .annotationTextLayer .textSelected{z-index:1}
     .annotationTextLayer.editing .studentTextBox.textSelected textarea{outline:2px solid #6954b5;background:#ffffff8c}

@@ -64,7 +64,7 @@ function render(){let root=$('pages');root.replaceChildren();root.classList.togg
   if (!clips[selected] && to>from) status('Clique sur « Créer l’extrait » avant de tracer sa zone.');
   else clearSelection();
   return;
-}e.preventDefault();let [x,y]=snapPoint94(el,p,...pos(e),e),z={p,x,y,w:0,h:0,c:selected,color:clips[selected].color||$('zoneColor').value};let overlay=document.createElementNS('http://www.w3.org/2000/svg','svg'),rect=document.createElementNS('http://www.w3.org/2000/svg','rect');overlay.setAttribute('viewBox','0 0 1000 1000');overlay.setAttribute('preserveAspectRatio','none');overlay.classList.add('drawingOverlay');rect.setAttribute('fill',z.color);rect.setAttribute('fill-opacity','.20');rect.setAttribute('stroke',z.color);rect.setAttribute('stroke-width','2');rect.setAttribute('vector-effect','non-scaling-stroke');overlay.append(rect);el.append(overlay);let id=e.pointerId,frame=0,finished=false;function paint(){frame=0;for(let k of ['x','y','width','height'])rect.setAttribute(k,String(z[({width:'w',height:'h'})[k]||k]*1000))}function update(ev){let [a,b]=snapPoint94(el,p,...pos(ev),ev);Object.assign(z,{x:Math.min(x,a),y:Math.min(y,b),w:Math.abs(a-x),h:Math.abs(b-y)});if(!frame)frame=requestAnimationFrame(paint)}function cleanup(commit,ev){if(finished)return;finished=true;if(commit)update(ev);if(frame)cancelAnimationFrame(frame);el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',cancel);el.removeEventListener('lostpointercapture',cancel);if(el.hasPointerCapture(id))el.releasePointerCapture(id);overlay.remove();clearGuides94(el);if(commit&&z.w>=.005&&z.h>=.005){zones.push(z);zoneSelected=zones.length-1;drawing=true;render()}else if(commit){clearSelection()}}function move(ev){if(ev.pointerId===id){ev.preventDefault();update(ev)}}function up(ev){if(ev.pointerId===id)cleanup(true,ev)}function cancel(ev){if(ev.pointerId===id)cleanup(false,ev)}paint();el.setPointerCapture(id);el.addEventListener('pointermove',move);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',cancel);el.addEventListener('lostpointercapture',cancel)};zones.forEach((z,i)=>{if(z.p!==p)return;let b=document.createElement('button');b.className='zone'+(i===zoneSelected?' selected':'');b.textContent=clips[z.c]?.name||'Zone';b.setAttribute('aria-label',b.textContent);style(b,z);el.append(b);if(preview){b.onclick=()=>previewPlayer?.select(z.c);return}let handle=document.createElement('i');b.append(handle);b.onpointerdown=e=>{e.stopPropagation();if(selected!==z.c)stop();zoneSelected=i;selected=z.c;el.parentElement.querySelectorAll('.zone.selected').forEach(n=>n.classList.remove('selected'));b.classList.add('selected');refreshClips();$('zoneColor').value=z.color||"#6954b5";let [x,y]=pos(e),orig={...z},resize=e.target===handle;b.setPointerCapture(e.pointerId);b.onpointermove=e=>{let [a,c]=pos(e);if(resize){z.w=Math.max(.01,Math.min(1-z.x,orig.w+a-x));z.h=Math.max(.01,Math.min(1-z.y,orig.h+c-y))}else{z.x=Math.max(0,Math.min(1-z.w,orig.x+a-x));z.y=Math.max(0,Math.min(1-z.h,orig.y+c-y))}if($('snapZones')?.checked&&!e.altKey)snapZone(z,el,resize);else clearGuides94(el);style(b,z)};b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>{clearGuides94(el);b.onlostpointercapture=null;b.onpointermove=null;b.onpointerup=null;b.onpointercancel=null}}})})}function style(b,z){Object.assign(b.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%',borderColor:preview?'transparent':(z.color||'#6954b5'),backgroundColor:preview?'transparent':(z.color||'#6954b5')+'33',color:preview?'transparent':(z.color||'#6954b5')})}$('draw').onclick=()=>{
+}e.preventDefault();let [x,y]=snapPoint94(el,p,...pos(e),e),z={p,x,y,w:0,h:0,c:selected,color:clips[selected].color||$('zoneColor').value};let overlay=document.createElementNS('http://www.w3.org/2000/svg','svg'),rect=document.createElementNS('http://www.w3.org/2000/svg','rect');overlay.setAttribute('viewBox','0 0 1000 1000');overlay.setAttribute('preserveAspectRatio','none');overlay.classList.add('drawingOverlay');rect.setAttribute('fill',z.color);rect.setAttribute('fill-opacity','.20');rect.setAttribute('stroke',z.color);rect.setAttribute('stroke-width','2');rect.setAttribute('vector-effect','non-scaling-stroke');overlay.append(rect);el.append(overlay);let id=e.pointerId,frame=0,finished=false;function paint(){frame=0;for(let k of ['x','y','width','height'])rect.setAttribute(k,String(z[({width:'w',height:'h'})[k]||k]*1000))}function update(ev){let [a,b]=snapPoint94(el,p,...pos(ev),ev);Object.assign(z,{x:Math.min(x,a),y:Math.min(y,b),w:Math.abs(a-x),h:Math.abs(b-y)});if(!frame)frame=requestAnimationFrame(paint)}function cleanup(commit,ev){if(finished)return;finished=true;if(commit)update(ev);if(frame)cancelAnimationFrame(frame);el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',cancel);el.removeEventListener('lostpointercapture',cancel);if(el.hasPointerCapture(id))el.releasePointerCapture(id);overlay.remove();clearGuides94(el);if(commit&&z.w>=.005&&z.h>=.005){zones.push(z);zoneSelected=zones.length-1;drawing=true;render()}else if(commit){clearSelection()}}function move(ev){if(ev.pointerId===id){ev.preventDefault();update(ev)}}function up(ev){if(ev.pointerId===id)cleanup(true,ev)}function cancel(ev){if(ev.pointerId===id)cleanup(false,ev)}paint();el.setPointerCapture(id);el.addEventListener('pointermove',move);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',cancel);el.addEventListener('lostpointercapture',cancel)};zones.forEach((z,i)=>{if(z.p!==p)return;let b=document.createElement('button');b.className='zone'+(i===zoneSelected?' selected':'');b.textContent=clips[z.c]?.name||'Zone';b.setAttribute('aria-label',b.textContent);style(b,z);el.append(b);if(preview){b.onclick=()=>previewPlayer?.select(z.c);return}let handle=document.createElement('i');b.append(handle);b.onpointerdown=e=>{e.stopPropagation();zoneSelected=i;selected=z.c;el.parentElement.querySelectorAll('.zone.selected').forEach(n=>n.classList.remove('selected'));b.classList.add('selected');refreshClips();$('zoneColor').value=z.color||"#6954b5";let [x,y]=pos(e),orig={...z},resize=e.target===handle;b.setPointerCapture(e.pointerId);b.onpointermove=e=>{let [a,c]=pos(e);if(resize){z.w=Math.max(.01,Math.min(1-z.x,orig.w+a-x));z.h=Math.max(.01,Math.min(1-z.y,orig.h+c-y))}else{z.x=Math.max(0,Math.min(1-z.w,orig.x+a-x));z.y=Math.max(0,Math.min(1-z.h,orig.y+c-y))}if($('snapZones')?.checked&&!e.altKey)snapZone(z,el,resize);else clearGuides94(el);style(b,z)};b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>{clearGuides94(el);b.onlostpointercapture=null;b.onpointermove=null;b.onpointerup=null;b.onpointercancel=null}}})})}function style(b,z){Object.assign(b.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%',borderColor:preview?'transparent':(z.color||'#6954b5'),backgroundColor:preview?'transparent':(z.color||'#6954b5')+'33',color:preview?'transparent':(z.color||'#6954b5')})}$('draw').onclick=()=>{
   if (!clips[selected]) {
     status('Sélectionne un extrait dans la liste, ou crée-le à partir de l’onde audio.');
     return;
@@ -178,7 +178,7 @@ async function buildMulti(){let rev=++multiEpoch;for(let i of activeIds){let b=a
     clearSelection();
     draftTrack = i;
   }
-  await toggleCreatorPlayback();
+  await toggleCreatorPlayback(trackClip(i));
 });installMarkerTools(panel,c,i);
 let gesture;
 const trackLimit = () => $('sync').checked ? commonMax() : decoded.get(i).duration;
@@ -344,7 +344,7 @@ refreshClips=function(){multiRefreshClips();[...$('clips').children].forEach((bu
 // Independent clips, grouped only in the editor.
 function groupName(c){return c.groupName||c.name}
 nextName=function(){let n=1;while(clips.some(c=>groupName(c)==='Extrait '+n))n++;return 'Extrait '+n};
-function selectIndependent(i){let c=clips[i];selected=i;zoneSelected=-1;drawing=true;stop();$('source').value=c.source;$('zoneColor').value=c.color||colorFor(c.source);refreshClips();clearZoneHighlight();status('Écoute de l’extrait : '+c.name)}
+function selectIndependent(i){let c=clips[i];selected=i;zoneSelected=-1;drawing=true;$('source').value=c.source;$('zoneColor').value=c.color||colorFor(c.source);refreshClips();clearZoneHighlight();status('Extrait sélectionné : '+c.name)}
 refreshClips=function(){let root=$('clips');root.replaceChildren();let groups=new Map();clips.forEach((c,i)=>{let key=c.groupId||'legacy-'+i;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(i)});for(let ids of groups.values()){let box=document.createElement('div');box.style.cssText='display:grid;gap:5px;padding:8px;border:1px solid #8884;border-radius:8px;margin-bottom:7px';let title=document.createElement('strong');title.textContent=groupName(clips[ids[0]]);box.append(title);for(let i of ids){let c=clips[i],b=document.createElement('button');b.className=i===selected?'active':'';b.style.cssText='text-align:left;margin-left:8px;border-left:4px solid '+colorFor(c.source)+';background:'+ (c.color||colorFor(c.source))+'22';b.textContent=(c.label||sources[c.source]?.label||sources[c.source]?.name||c.name)+' · '+(c.end-c.start).toFixed(1)+' s';b.title=c.name;b.onclick=()=>selectIndependent(i);box.append(b)}root.append(box)}};
 function addIndependentClips(tracks, name) {
   const groupId = uid(), first = clips.length;
@@ -425,31 +425,89 @@ document.addEventListener('keydown',safe(async e=>{
  }
  if (k==='k' && !e.repeat) {
   e.preventDefault();
-  if (creatorPending) stop();
+  if (creatorPending) seekCreator(position(),false);
   else if (playing && !creatorAudio.paused) {
     creatorAudio.pause();
     creatorPaused=true;
   }
   paintTransport();
  }
- if(k==='r'&&!e.repeat){e.preventDefault();let c=contextClip();if(c)await play(await valid(c),0)}
+ if(k==='r'&&!e.repeat){e.preventDefault();let c=transportContext();if(c && c.end>c.start)await play(c,0)}
 }));
 
 let draftTrack=null;
 function clearZoneHighlight(){document.querySelectorAll('#pages .zone.selected').forEach(n=>n.classList.remove('selected'))}
-function clearSelection(){if(selected>=0||zoneSelected>=0)stop();selected=-1;zoneSelected=-1;drawing=false;clearZoneHighlight();refreshClips()}
-function contextClip(){let i=activeIds.includes(draftTrack)?draftTrack:activeIds[0];return selected>=0?{...clips[selected]}:i!==undefined?trackClip(i):null} async function playContext(){let c=contextClip();if(c){let offset=sameTransport(c)?transportOffset:0;await play(c,offset)}}
+function clearSelection(){selected=-1;zoneSelected=-1;drawing=false;clearZoneHighlight();refreshClips()}
+function contextClip(){let i=activeIds.includes(draftTrack)?draftTrack:activeIds[0];return selected>=0?{...clips[selected]}:i!==undefined?trackClip(i):null}
 document.addEventListener('pointerdown',e=>{if(preview)return;let t=e.target;if(t.closest('button,input,select,textarea,label,summary,.zone,canvas,.page,#clips > div,.creatorFooter'))return;if(t.closest('#pages,#clips,#editor,main,aside'))clearSelection()});
 
-const creatorFooter=document.createElement('footer');creatorFooter.className='studentFooter creatorFooter';creatorFooter.innerHTML='<div style="flex:1;min-width:180px"><strong id="transportTitle">Découpage en cours</strong><div style="display:flex;align-items:center;gap:8px"><small id="transportElapsed">0:00</small><input id="transportRange" aria-label="Position dans l’extrait" type="range" min="0" max="1" step="0.01" value="0" style="flex:1;min-width:60px"><small id="transportTotal">0:00</small></div></div><button id="transportToggle">Lecture</button><button id="transportRestart">Recommencer</button><label><input id="transportLoop" type="checkbox"> Boucle</label>';document.body.append(creatorFooter);
-function sameTransport(c){return !!(c&&transportClip&&c.source===transportClip.source&&c.start===transportClip.start&&c.end===transportClip.end)}
+const creatorFooter=document.createElement('footer');creatorFooter.className='studentFooter creatorFooter';creatorFooter.innerHTML='<div style="flex:1;min-width:180px"><strong id="transportTitle">Découpage en cours</strong><div style="display:flex;align-items:center;gap:8px"><small id="transportElapsed">0:00</small><input id="transportRange" aria-label="Position dans l’extrait" type="range" min="0" max="1" step="0.01" value="0" style="flex:1;min-width:60px"><small id="transportTotal">0:00</small></div></div><button id="transportToggle">Lecture</button><button id="transportRestart">Recommencer</button><label><input id="transportLoop" type="checkbox"> Boucle</label><div id="transportSelection" hidden><button id="transportPlaySelection">Écouter la sélection</button></div>';document.body.append(creatorFooter);
+function transportContext(){return transportClip || contextClip()}
+function sameTransport(c){return !!(c&&transportClip&&c.source===transportClip.source&&c.start===transportClip.start&&c.end===transportClip.end&&c.name===transportClip.name)}
 function position(){return transportClip?Math.min(transportClip.end-transportClip.start,transportOffset+(playing?Math.max(0,ac().currentTime-transportStart):0)):0}
 const fmtTransport=t=>Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
-function paintTransport(){creatorFooter.style.display=preview?'none':'flex';if(preview)return;let c=contextClip(),d=c?Math.max(0,c.end-c.start):0,match=sameTransport(c),pos=match?position():0;$('transportTitle').textContent=c?(selected>=0?c.name:'Découpage en cours — '+(sources[c.source]?.label||sources[c.source]?.name||'')):'Aucun audio sélectionné';$('transportRange').max=d||1;$('transportRange').disabled=!d;if(!scrubbing)$('transportRange').value=pos;$('transportElapsed').textContent=fmtTransport(pos);$('transportTotal').textContent=fmtTransport(d);$('transportToggle').textContent=creatorPending||playing&&!creatorAudio.paused?'❚❚':'▶';$('transportToggle').setAttribute('aria-label',creatorPending?'Annuler la lecture':playing&&!creatorAudio.paused?'Pause':'Lecture');$('transportToggle').disabled=!d;$('transportRestart').disabled=!d;$('transportLoop').checked=$('loop').checked}
-$('transportToggle').onclick=()=> $('listen').click();$('transportRestart').onclick=safe(async()=>{let c=contextClip();if(c)await play(await valid(c),0)});$('transportLoop').onchange=()=>{$('loop').checked=$('transportLoop').checked};const tr=$('transportRange');function seekCreator(offset,resume){let c=contextClip();if(!c)return;offset=Math.max(0,Math.min(c.end-c.start,offset));stop();transportClip={...c};transportOffset=offset;if(resume&&offset<c.end-c.start)play(c,offset).catch(e=>status(e.message));paintTransport()}
-tr.onpointerdown=()=>{scrubbing=true;scrubWasPlaying=!!playing&&!creatorPaused;let c=contextClip(),pos=sameTransport(c)?position():0;seekCreator(pos,false)};
-tr.oninput=()=>{let offset=+tr.value;seekCreator(offset,!scrubbing&&!!playing&&!creatorPaused)};
-function finishScrub(){if(!scrubbing)return;let offset=+tr.value,resume=scrubWasPlaying;scrubbing=false;seekCreator(offset,resume)}
+function paintTransport() {
+  creatorFooter.style.display=preview?'none':'flex';
+  if (preview) return;
+  const clip=transportContext(), selection=contextClip();
+  const duration=clip ? Math.max(0,clip.end-clip.start) : 0;
+  const otherSelection=!!(transportClip && selection && selection.end>selection.start && !sameTransport(selection));
+  $('transportSelection').hidden=!otherSelection;
+  if (otherSelection) {
+    const label='Écouter la sélection : '+selection.name;
+    const button=$('transportPlaySelection');
+    if (button.textContent!==label) button.textContent=label;
+  }
+
+  const title=clip ? (transportClip ? (playing && !creatorAudio.paused?'En écoute : ':'')+clip.name :
+    selected>=0 ? clip.name : 'Découpage en cours — '+(sources[clip.source]?.label||sources[clip.source]?.name||''))
+    : 'Aucun audio sélectionné';
+  if ($('transportTitle').textContent!==title) $('transportTitle').textContent=title;
+  const pos=sameTransport(clip)?position():0;
+  const range=$('transportRange');
+  range.max=duration||1;
+  range.disabled=!duration;
+  if (!scrubbing) range.value=pos;
+  $('transportElapsed').textContent=fmtTransport(pos);
+  $('transportTotal').textContent=fmtTransport(duration);
+  $('transportToggle').textContent=creatorPending||playing&&!creatorAudio.paused?'❚❚':'▶';
+  $('transportToggle').setAttribute('aria-label',creatorPending?'Annuler la lecture':playing&&!creatorAudio.paused?'Pause':'Lecture');
+  $('transportToggle').disabled=!duration;
+  $('transportRestart').disabled=!duration;
+  $('transportLoop').checked=$('loop').checked;
+}
+$('transportToggle').onclick=safe(()=>toggleCreatorPlayback());
+$('transportPlaySelection').onclick=safe(async()=>{
+  const clip=contextClip();
+  if (clip && clip.end>clip.start) await play(clip);
+});
+$('transportRestart').onclick=safe(async()=>{
+  const clip=transportContext();
+  if (clip && clip.end>clip.start) await play(clip);
+});
+$('transportLoop').onchange=()=>{$('loop').checked=$('transportLoop').checked};
+const tr=$('transportRange');
+function seekCreator(offset,resume) {
+  const clip=transportContext();
+  if (!clip) return;
+  offset=Math.max(0,Math.min(clip.end-clip.start,offset));
+  stop();
+  transportClip=clip;
+  transportOffset=offset;
+  if (resume && offset<clip.end-clip.start) play(clip,offset).catch(e=>status(e.message));
+  paintTransport();
+}
+tr.onpointerdown=()=>{
+  scrubbing=true;
+  scrubWasPlaying=!!playing&&!creatorPaused;
+  seekCreator(position(),false);
+};
+tr.oninput=()=>seekCreator(+tr.value,!scrubbing&&!!playing&&!creatorPaused);
+function finishScrub(){
+  if (!scrubbing) return;
+  scrubbing=false;
+  seekCreator(+tr.value,scrubWasPlaying);
+}
 window.addEventListener('pointerup',finishScrub);window.addEventListener('pointercancel',finishScrub);
 
 const creatorAudio=new Audio();creatorAudio.preload='auto';let creatorURL=null,creatorPending=false;
@@ -460,6 +518,7 @@ play = async function (clip, offset = 0, loop = $('loop').checked) {
   stop();
   const epoch = transportEpoch;
   creatorPending = true;
+  transportClip = clip;
   paintTransport();
   try {
     const c = await valid({...clip});
@@ -481,7 +540,7 @@ play = async function (clip, offset = 0, loop = $('loop').checked) {
     creatorPaused = creatorAudio.paused;
   } catch (error) {
     if (epoch === transportEpoch) {
-      playing = null;
+      stop();
       status('Lecture impossible : ' + error.message);
     }
   } finally {
@@ -492,7 +551,14 @@ play = async function (clip, offset = 0, loop = $('loop').checked) {
   }
 };
 position=function(){return transportClip?Math.min(transportClip.end-transportClip.start,playing?creatorAudio.currentTime:transportOffset):0};
-creatorAudio.addEventListener('ended',()=>{if(playing===creatorAudio){transportOffset=transportClip.end-transportClip.start;playing=null;creatorPaused=false}});
+creatorAudio.addEventListener('ended',()=>{
+  if (playing!==creatorAudio) return;
+  transportOffset=transportClip.end-transportClip.start;
+  playing=null;
+  creatorPaused=false;
+  if (!sameTransport(contextClip())) stop();
+  paintTransport();
+});
 creatorAudio.addEventListener('error',()=>{if(playing===creatorAudio){transportOffset=creatorAudio.currentTime;playing=null;status('Erreur audio — relance la lecture.')}});
 function jumpCreator(delta) {
   if (playing && Number.isFinite(creatorAudio.duration)) {
@@ -505,26 +571,26 @@ function jumpCreator(delta) {
     paintTransport();
     return;
   }
-  const clip=contextClip();
+  const clip=transportContext();
   if (!clip || clip.end<=clip.start) return;
   const currentOffset=sameTransport(clip) ? position() : 0;
   seekCreator(currentOffset+delta,creatorPending);
 }
 
-async function toggleCreatorPlayback() {
-  if (creatorPending) {
+async function toggleCreatorPlayback(clip=transportContext()) {
+  if (creatorPending && sameTransport(clip)) {
     stop();
-  } else if (playing && sameTransport(contextClip())) {
+  } else if (playing && sameTransport(clip)) {
     if (creatorAudio.paused) await creatorAudio.play();
     else creatorAudio.pause();
     creatorPaused = creatorAudio.paused;
-  } else {
-    await playContext();
+  } else if (clip && clip.end>clip.start) {
+    await play(clip,sameTransport(clip)?transportOffset:0);
   }
   paintTransport();
 }
 
-$('listen').onclick = safe(toggleCreatorPlayback);
+$('listen').onclick = safe(()=>toggleCreatorPlayback(contextClip()));
 $('loop').addEventListener('change',()=>creatorAudio.loop=$('loop').checked);$('transportLoop').addEventListener('change',()=>creatorAudio.loop=$('loop').checked);
 
 const playerHeight = new ResizeObserver(([entry]) => {

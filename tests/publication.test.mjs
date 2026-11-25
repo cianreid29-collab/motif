@@ -71,3 +71,40 @@ test('Un enseignant publie les deux fichiers et le lecteur ouvre le lien sans id
     await rm(directory,{recursive:true,force:true});
   }
 });
+
+test('Le Worker gratuit stocke la fiche et sa miniature dans une seule entrée KV',async()=>{
+  const {default:worker}=await import('../publication/worker.mjs');
+  const values=new Map();
+  const env={
+    MOTIF_ATELIER_ORIGIN:'https://atelier.example.test',
+    MOTIF_PUBLISHER_ORIGIN:'https://publier.example.test',
+    MOTIF_PUBLIC_ORIGIN:'https://lire.example.test',
+    MOTIF_PUBLISH_PASSWORD:'test-password-for-motif-only',
+    FICHES:{
+      get:async key=>values.get(key)||null,
+      put:async(key,value)=>values.set(key,await new Response(value).arrayBuffer()),
+    },
+  };
+  const publisher=env.MOTIF_PUBLISHER_ORIGIN, reader=env.MOTIF_PUBLIC_ORIGIN;
+  const id='test-0123456789abcdef0123456789abcdef';
+  const authorization='Basic '+btoa('enseignant:'+env.MOTIF_PUBLISH_PASSWORD);
+  assert.equal((await worker.fetch(new Request(publisher+'/publish'),env)).status,401);
+  const form=new FormData();
+  form.append('html',new Blob(['<title>Test MOTIF</title>'],{type:'text/html'}),'index.html');
+  form.append('cover',new Blob([Uint8Array.of(255,216,255,217)],{type:'image/jpeg'}),'index-apercu.jpg');
+  const packed=new Response(form);
+  const data=await packed.arrayBuffer();
+  const send=origin=>worker.fetch(new Request(publisher+'/publish/'+id,{method:'POST',body:data,headers:{
+    Authorization:authorization,Origin:origin,'Content-Length':data.byteLength,'Content-Type':packed.headers.get('Content-Type'),
+  }}),env);
+  assert.equal((await send(reader)).status,403);
+  const result=await send(publisher);
+  assert.equal(result.status,201);
+  assert.equal(values.size,1);
+  const {url}=await result.json();
+  assert.equal(await (await worker.fetch(new Request(url),env)).text(),'<title>Test MOTIF</title>');
+  const image=await worker.fetch(new Request(reader+'/'+id+'/index-apercu.jpg'),env);
+  assert.equal(image.headers.get('Content-Type'),'image/jpeg');
+  assert.deepEqual(new Uint8Array(await image.arrayBuffer()),Uint8Array.of(255,216,255,217));
+  assert.equal((await send(publisher)).status,409);
+});

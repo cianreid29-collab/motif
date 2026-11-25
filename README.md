@@ -34,3 +34,9 @@ Pour activer le service sur un hébergement Node.js 22 ou supérieur, configurer
 | `MOTIF_STORAGE` | Dossier persistant et sauvegardé pour les fiches |
 
 Lancer `node publication/server.mjs`. Le service écoute sur `127.0.0.1:8880` par défaut. Deux hôtes virtuels HTTPS du proxy inverse redirigent vers ce serveur en conservant chacun l’en-tête `Host`. Puis renseigner `window.MOTIF_PUBLICATION = {publisherOrigin: 'https://publier.example.org', publicOrigin: 'https://lire.example.org'}` dans `sharing-config.js` et republier l’atelier pour activer le bouton. La connexion GitHub du pilote reste disponible dans le menu en attendant l’activation. Les fiches deviennent accessibles à toute personne ayant leur lien.
+
+### Hébergement gratuit sur Cloudflare
+
+Le Worker de `publication/worker.mjs` utilise Workers et Workers KV sur leur formule gratuite. Les fiches et leurs miniatures sont réunies dans une entrée KV plafonnée à 25 Mio. La disponibilité du lien peut prendre un court délai après la publication, selon la propagation de KV. Garder le compte sur la formule gratuite et vérifier les plafonds de stockage, d’écritures et de lecture avant ouverture à d’autres enseignants.
+
+Après connexion au compte Cloudflare et choix de son sous-domaine `workers.dev`, créer un espace KV commun aux deux Workers. Copier `publication/wrangler.example.toml` en `publication/wrangler.toml`, remplacer le sous-domaine et l’identifiant KV, puis déployer les deux environnements `publisher` et `reader`. Ajouter `MOTIF_PUBLISH_PASSWORD` comme secret dans `publisher`. Placer enfin les deux origines HTTPS obtenues dans `sharing-config.js` pour activer **Créer un lien public** dans GitHub Pages.

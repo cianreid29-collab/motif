@@ -1,0 +1,26 @@
+name = "motif-publication"
+main = "./worker.mjs"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[env.publisher]
+name = "motif-publier"
+preview_urls = false
+[env.publisher.vars]
+MOTIF_ATELIER_ORIGIN = "https://cianreid29-collab.github.io"
+MOTIF_PUBLISHER_ORIGIN = "https://motif-publier.REPLACE.workers.dev"
+MOTIF_PUBLIC_ORIGIN = "https://motif-lire.REPLACE.workers.dev"
+[[env.publisher.kv_namespaces]]
+binding = "FICHES"
+id = "REPLACE_KV_ID"
+
+[env.reader]
+name = "motif-lire"
+preview_urls = false
+[env.reader.vars]
+MOTIF_ATELIER_ORIGIN = "https://cianreid29-collab.github.io"
+MOTIF_PUBLISHER_ORIGIN = "https://motif-publier.REPLACE.workers.dev"
+MOTIF_PUBLIC_ORIGIN = "https://motif-lire.REPLACE.workers.dev"
+[[env.reader.kv_namespaces]]
+binding = "FICHES"
+id = "REPLACE_KV_ID"

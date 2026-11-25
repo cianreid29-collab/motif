@@ -109,7 +109,7 @@ function render(){let root=$('pages');root.replaceChildren();root.classList.togg
   }
   drawing=true;
   status('Trace un rectangle sur la page pour « '+clips[selected].name+' ».');
-};$('remove').onclick=()=>{if(zoneSelected>=0){zones.splice(zoneSelected,1);zoneSelected=-1;render()}};$('assign').onclick=()=>assignClipToZone(selected,zoneSelected);$('preview').onclick=()=>{stop();preview=!preview;$('preview').textContent=preview?'Retour édition':'Prévisualiser';render()};$('theme').onclick=()=>document.body.classList.toggle('dark');function download(name,data,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000)}function project(){return {pages,sources,clips,zones,documentParts,sync:$('sync').checked,title:$('projectName').value}}function filename(ext){let n=prompt('Nom du fichier', $('projectName').value||'Mon document MOTIF');if(n===null)return null;n=n.trim().replace(/[\\/:*?"<>|]/g,'-').replace(/\.(motif|html)$/i,'');if(!n)return null;$('projectName').value=n;return n+ext}$('save').onclick=()=>{let n=filename('.motif');if(n)download(n,JSON.stringify(project()),'application/json')};$('load').onchange=safe(async()=>{stop();let p=JSON.parse(await $('load').files[0].text());({pages,sources,clips,zones}=p);$('projectName').value=p.title||'';bufferCache.clear();selected=-1;zoneSelected=-1;refreshSources();refreshClips();render();if(sources.length)await waveform(true)});
+};$('remove').onclick=()=>{if(zoneSelected>=0){zones.splice(zoneSelected,1);zoneSelected=-1;render()}};$('assign').onclick=()=>assignClipToZone(selected,zoneSelected);$('preview').onclick=()=>{stop();preview=!preview;$('preview').textContent=preview?'Retour édition':'Prévisualiser';render()};$('theme').onclick=()=>document.body.classList.toggle('dark');function download(name,data,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000)}function project(){return {pages,sources,clips,zones,documentParts,sync:$('sync').checked,title:$('projectName').value}}function filename(ext){let n=prompt('Nom du fichier', $('projectName').value||'Mon document MOTIF');if(n===null)return null;n=n.trim().replace(/[\\/:*?"<>|]/g,'-').replace(/\.(motif|html)$/i,'');if(!n)return null;return n+ext}$('save').onclick=()=>{let n=filename('.motif');if(n)download(n,JSON.stringify(project()),'application/json')};$('load').onchange=safe(async()=>{stop();let p=JSON.parse(await $('load').files[0].text());({pages,sources,clips,zones}=p);$('projectName').value=p.title||'';bufferCache.clear();selected=-1;zoneSelected=-1;refreshSources();refreshClips();render();if(sources.length)await waveform(true)});
 for (const shareMenu of document.querySelectorAll('header .motifShare')) {
   const shareChoices=shareMenu.querySelector('.motifShareChoices');
   shareMenu.addEventListener('toggle',()=>{
@@ -175,7 +175,7 @@ function webExportTarget(value) {
   return {url,page,slug,image:slug+'-apercu.jpg'};
 }
 
-async function exportCover(source,title,layout) {
+async function exportCover(source,title) {
   const canvas=document.createElement('canvas');
   canvas.width=1200;
   canvas.height=630;
@@ -187,14 +187,13 @@ async function exportCover(source,title,layout) {
   ctx.fillRect(0,0,1200,630);
   const logo=document.querySelector('header .brand img');
   await logo.decode();
-  const centered=layout==='logo';
-  ctx.drawImage(logo,centered?540:70,centered?116:78,120,120);
+  ctx.drawImage(logo,70,78,120,120);
 
   const words=title.trim().split(/\s+/);
   const lines=[];
   let line='';
   ctx.font='700 54px system-ui, sans-serif';
-  const width=centered?920:540;
+  const width=540;
   for (const word of words) {
     const next=line?line+' '+word:word;
     if (line&&ctx.measureText(next).width>width) {
@@ -205,25 +204,23 @@ async function exportCover(source,title,layout) {
   if (line) lines.push(line);
   const visible=lines.slice(0,3);
   if (lines.length>visible.length) visible[visible.length-1]+='…';
-  ctx.textAlign=centered?'center':'left';
+  ctx.textAlign='left';
   ctx.fillStyle='#fff';
   for (const [i,raw] of visible.entries()) {
     let text=raw;
     while (text.length>2&&ctx.measureText(text).width>width) text=text.replace(/…$/,'').slice(0,-1)+'…';
-    ctx.fillText(text,centered?600:70,centered?329+i*65:302+i*65);
+    ctx.fillText(text,70,302+i*65);
   }
 
-  if (!centered) {
-    const page=new Image();
-    page.src=source;
-    await page.decode();
-    const scale=Math.min(460/page.naturalWidth,530/page.naturalHeight);
-    const w=page.naturalWidth*scale,h=page.naturalHeight*scale;
-    const x=895-w/2,y=(630-h)/2;
-    ctx.fillStyle='#fff';
-    ctx.fillRect(x-8,y-8,w+16,h+16);
-    ctx.drawImage(page,x,y,w,h);
-  }
+  const page=new Image();
+  page.src=source;
+  await page.decode();
+  const scale=Math.min(460/page.naturalWidth,530/page.naturalHeight);
+  const w=page.naturalWidth*scale,h=page.naturalHeight*scale;
+  const x=895-w/2,y=(630-h)/2;
+  ctx.fillStyle='#fff';
+  ctx.fillRect(x-8,y-8,w+16,h+16);
+  ctx.drawImage(page,x,y,w,h);
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>{
     if (blob) resolve(blob);
     else reject(Error('Impossible de générer la miniature.'));
@@ -296,7 +293,7 @@ $('exportWeb').onclick=safe(()=>{
   const form=document.createElement('form');
   form.innerHTML='<p>Choisis l’adresse de la fiche sur ton site (par exemple dans motif-demo). Télécharge ensuite le ZIP, puis mets les deux fichiers qu’il contient dans le dossier correspondant sur GitHub Pages.</p>'+
     '<label>Adresse finale du document <input type="url" required placeholder="https://exemple.github.io/motif-docs/ani-kuni.html"></label>'+
-    '<label>Miniature <select><option value="page">Fiche et logo MOTIF</option><option value="logo">Logo MOTIF</option></select></label>'+
+    '<p>La première page du document est utilisée automatiquement pour l’aperçu du lien.</p>'+
     '<button type="submit" class="primary">Télécharger les fichiers à publier</button> <span role="status"></span>'+
     '<p>Si ta fiche est déjà en ligne, colle son adresse ci-dessus, puis copie-la pour l’ENT, Padlet ou Canva.</p>'+
     '<button type="button">Copier l’adresse de la fiche</button>';
@@ -332,7 +329,7 @@ $('exportWeb').onclick=safe(()=>{
       if (!exported) { message.textContent=''; return; }
       const title=exported.title.trim()||'Document MOTIF';
       const html=studentDocumentHTML(exported,studentShareHead(title,target));
-      const cover=await exportCover(exported.pages[0],title,form.querySelector('select').value);
+      const cover=await exportCover(exported.pages[0],title);
       const zip=webExportZip([
         {name:target.page,data:new TextEncoder().encode(html)},
         {name:target.image,data:new Uint8Array(await cover.arrayBuffer())},

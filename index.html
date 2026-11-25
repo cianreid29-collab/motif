@@ -366,7 +366,22 @@ function showResources(){let root=$('resourceList');root.replaceChildren();sourc
 const baseRefresh=refreshSources;refreshSources=function(){baseRefresh();showResources()};
 function commonMax(){return Math.min(...activeIds.map(i=>decoded.get(i)?.duration||0))}
 function scaleMax(){return Math.max(.01,...activeIds.map(i=>decoded.get(i)?.duration||0))}
-function setBounds(i,a,b){let max=$('sync').checked?commonMax():decoded.get(i).duration;a=Math.max(0,Math.min(max,a));b=Math.max(a,Math.min(max,b));for(let j of $('sync').checked?activeIds:[i])bounds.set(j,[a,b]);paintAll()}
+function setBounds(i,a,b) {
+  const sync=$('sync').checked;
+  const max=sync ? commonMax() : decoded.get(i).duration;
+  a=Math.max(0,Math.min(max,a));
+  b=Math.max(a,Math.min(max,b));
+  const tracks=sync ? activeIds : [i];
+  for (const track of tracks) bounds.set(track,[a,b]);
+
+  // A cursor belongs to the current draft bounds. Editing another clip
+  // while listening to an existing excerpt must leave that excerpt playing.
+  const reset=transportClip?.draft && tracks.includes(transportClip.source) &&
+    (transportClip.start!==a || transportClip.end!==b);
+  if (reset) stop();
+  paintAll();
+  if (reset) paintTransport();
+}
 const waveformCache = new WeakMap();
 
 function waveformPeaks(canvas, buffer, start, span) {
@@ -400,7 +415,7 @@ async function buildMulti(){let rev=++multiEpoch;for(let i of activeIds){let b=a
     clearSelection();
     draftTrack = i;
   }
-  await toggleCreatorPlayback(trackClip(i));
+  await toggleCreatorPlayback(draftClip(i));
 });installMarkerTools(panel,c,i);
 let gesture;
 const trackLimit = () => $('sync').checked ? commonMax() : decoded.get(i).duration;
@@ -446,7 +461,7 @@ c.onpointerup=event=>{
   const {start,a,b,moved}=gesture;
   gesture=null;
   if (!moved && start>=a && start<b) {
-    seekCreator(start-a,false,trackClip(i));
+    seekCreator(start-a,false,draftClip(i));
     status('Curseur placé. Appuie sur Lecture pour écouter.');
   } else if (moved && bounds.get(i)[1]>bounds.get(i)[0]) {
     status('Passage sélectionné. Clique dans l’onde pour placer le curseur ou sur « Créer l’extrait ».');
@@ -459,7 +474,7 @@ pairCurrent=async function(){if(!activeIds.length)throw Error('Coche au moins un
 $('addAudio').onclick=()=>{$('audio').value='';$('audio').click()};async function importAudioFiles(files){for(let f of files){let b=await ac().decodeAudioData(await f.arrayBuffer());let data=await read(f);let i=sources.length;sources.push({name:f.name,data});bufferCache.set(i,b);decoded.set(i,b);activeIds.push(i);bounds.set(i,[0,0]);refreshSources();await buildMulti()}status(sources.length+' ressources importées')} $('audio').onchange=safe(async()=>{let files=Array.from($('audio').files);$('audio').value='';await importAudioFiles(files)});
 $('sync').onchange=()=>buildMulti();$('listen').onclick=safe(async()=>{if(activeIds.length)await play(await valid(trackClip(activeIds[0])))});
 const baseClips=refreshClips;refreshClips=function(){baseClips();[...$('clips').children].forEach((button,i)=>{button.onclick=()=>{let c=clips[i];selected=i;zoneSelected=-1;drawing=true;activeIds=variants(c).map(v=>v.source);bounds=new Map(variants(c).map(v=>[v.source,[v.start,v.end]]));$('sync').checked=variants(c).every(v=>v.start===c.start&&v.end===c.end);$('source').value=c.source;$('zoneColor').value=c.color||'#6954b5';for(let k of ['fi','fo','name'])$(k).value=c[k];buildMulti();refreshClips();status('Trace une zone ou modifie l’extrait')}})};
-$('newClip').onclick=()=>{selected=-1;zoneSelected=-1;drawing=false;$('name').value=nextName();bounds=new Map(activeIds.map(i=>[i,[0,0]]));refreshClips();paintAll()};
+$('newClip').onclick=()=>{selected=-1;zoneSelected=-1;drawing=false;$('name').value=nextName();bounds=new Map(activeIds.map(i=>[i,[0,0]]));if(transportClip?.draft)stop();refreshClips();paintAll()};
 $('replacement').onchange=safe(async()=>{let f=$('replacement').files[0];if(!f)return;let i=+$('source').value,b=await ac().decodeAudioData(await f.arrayBuffer());if(clips.some(c=>variants(c).some(v=>v.source===i&&v.end>b.duration)))throw Error('Le nouvel audio est trop court pour les extraits existants.');stop();sources[i]={...sources[i],name:f.name,data:await read(f),form93:undefined};bufferCache.set(i,b);decoded.set(i,b);refreshSources();$('source').value=i;await buildMulti();$('replacement').value='';status('Source remplacée')});
 async function prepareProject(projectData) {
   const invalid = message => new Error('Projet MOTIF illisible. ' + message);
@@ -592,7 +607,7 @@ $('add').onclick = safe(async () => {
   if (selected >= 0 && name === clips[selected].name) name = nextName();
   addIndependentClips(variants(await pairCurrent()), name);
 });
-$('updateClip').onclick=safe(async()=>{if(selected<0)throw Error('Sélectionne une piste à modifier.');let old=clips[selected],c=await valid({...old,...trackClip(old.source),name:old.name,color:old.color});clips[selected]={...old,...c,variants:undefined,kara:undefined};refreshClips();render();status('Piste modifiée — zones conservées')});
+$('updateClip').onclick=safe(async()=>{if(selected<0)throw Error('Sélectionne une piste à modifier.');let old=clips[selected],c=await valid({...old,...trackClip(old.source),name:old.name,color:old.color});if(sameTransport(old))stop();clips[selected]={...old,...c,variants:undefined,kara:undefined};refreshClips();render();status('Piste modifiée — zones conservées')});
 // Convert older grouped versions while preserving existing zone indices.
 async function openProject(file) {
   return guard(async () => {
@@ -661,12 +676,13 @@ document.addEventListener('keydown',safe(async e=>{
 let draftTrack=null;
 function clearZoneHighlight(){document.querySelectorAll('#pages .zone.selected').forEach(n=>n.classList.remove('selected'))}
 function clearSelection(){selected=-1;zoneSelected=-1;drawing=false;clearZoneHighlight();refreshClips()}
-function contextClip(){let i=activeIds.includes(draftTrack)?draftTrack:activeIds[0];return selected>=0?{...clips[selected]}:i!==undefined?trackClip(i):null}
+function draftClip(index){return {...trackClip(index),draft:true}}
+function contextClip(){let i=activeIds.includes(draftTrack)?draftTrack:activeIds[0];return selected>=0?{...clips[selected]}:i!==undefined?draftClip(i):null}
 document.addEventListener('pointerdown',e=>{if(preview)return;let t=e.target;if(t.closest('button,input,select,textarea,label,summary,.zone,canvas,.page,#clips > div,.creatorFooter'))return;if(t.closest('#pages,#clips,#editor,main,aside'))clearSelection()});
 
 const creatorFooter=document.createElement('footer');creatorFooter.className='studentFooter creatorFooter';creatorFooter.innerHTML='<div style="flex:1;min-width:180px"><strong id="transportTitle">Découpage en cours</strong><div style="display:flex;align-items:center;gap:8px"><small id="transportElapsed">0:00</small><input id="transportRange" aria-label="Position dans l’extrait" type="range" min="0" max="1" step="0.01" value="0" style="flex:1;min-width:60px"><small id="transportTotal">0:00</small></div></div><button id="transportToggle">Lecture</button><button id="transportRestart">Recommencer</button><label><input id="transportLoop" type="checkbox"> Boucle</label><div id="transportSelection" hidden><button id="transportPlaySelection">Écouter la sélection</button></div>';document.body.append(creatorFooter);
 function transportContext(){return transportClip || contextClip()}
-function sameTransport(c){return !!(c&&transportClip&&c.source===transportClip.source&&c.start===transportClip.start&&c.end===transportClip.end&&c.name===transportClip.name)}
+function sameTransport(c){return !!(c&&transportClip&&c.source===transportClip.source&&c.start===transportClip.start&&c.end===transportClip.end&&c.name===transportClip.name&&!!c.draft===!!transportClip.draft)}
 function position(){return transportClip?Math.min(transportClip.end-transportClip.start,transportOffset+(playing?Math.max(0,ac().currentTime-transportStart):0)):0}
 const fmtTransport=t=>Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
 function paintTransport() {

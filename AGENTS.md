@@ -12,7 +12,7 @@ MOTIF — Des documents qui donnent à entendre. Projet conçu et dirigé par Ci
 - Ne pas ajouter de licence de diffusion sans décision du propriétaire.
 
 ## État et objectifs
-La V0.9.4.2 est la version publique sur main. Les tags v0.8.1, v0.9.4 et v0.9.4.1 conservent les versions publiques précédentes. Vérifier les fonctionnalités ci-dessous dans le code et avec des tests.
+La V0.9.5 est la version publique sur main. Les tags v0.8.1, v0.9.4, v0.9.4.1 et v0.9.4.2 conservent les versions publiques précédentes. Vérifier les fonctionnalités ci-dessous dans le code et avec des tests.
 - Atelier : import PDF/image, création de zones, association à des extraits, lecture/pause, fondus, boucle, vitesse, zoom, marqueurs, sauvegarde et réouverture; vérifier ce qui existe réellement.
 - Analyse de forme musicale (Avancé uniquement) : bouton explicite Analyser la forme, jamais automatique à l'import. Détecter les frontières et regrouper les sections similaires (A/B/C, couleurs communes). Ne pas prétendre identifier automatiquement couplet/refrain avec certitude. Renommage et correction manuelle des limites, fusion si pertinente, sélection d'une section puis création explicite d'un extrait. Marqueurs manuels indépendants. Masquer/supprimer l'analyse sans détruire les extraits. Persistance .motif. Structure commune pour pistes synchronisées. Traitement local, non bloquant si possible via Web Worker. Aucune séparation de stems demandée.
 - Zones : guides temporaires horizontaux/verticaux, bords et centres des zones et de la page, magnétisme à la création, déplacement et redimensionnement. Désactivation via réglage et Alt/Option sur ordinateur. Prévoir tactile. Guides absents de l'export.
